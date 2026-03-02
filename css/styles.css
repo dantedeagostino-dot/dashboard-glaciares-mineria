@@ -1019,7 +1019,7 @@ body {
   }
 
   .header-logo .subtitle {
-    display: none;
+    font-size: 0.6rem;
   }
 
   .dashboard {
