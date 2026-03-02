@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dashboard interactivo para el análisis de glaciares y proyectos mineros en Argentina. Inventario Nacional de Glaciares + Cartera SIACAM.">
+  <title>Glaciares & Minería — Dashboard Argentina</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- App CSS -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Cargando datos glaciares y mineros...</div>
+  </div>
+
+  <div class="dashboard">
+
+    <!-- ═══ HEADER ═══ -->
+    <header class="header">
+      <div class="header-left">
+        <div class="header-logo">
+          <div>
+            <i class="fa-solid fa-mountain-sun icon"></i>
+          </div>
+          <div>
+            <h1>Glaciares & Minería</h1>
+            <div class="subtitle">República Argentina — Análisis Espacial</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-stats">
+        <div class="header-stat glacier">
+          <span class="stat-value" id="statTotalGlaciares">16,968</span>
+          <span class="stat-label">Geoformas Totales</span>
+        </div>
+        <div class="header-stat info">
+          <span class="stat-value" id="statSuperficie">8,484</span>
+          <span class="stat-label">km² Glaciares</span>
+        </div>
+        <div class="header-stat mining">
+          <span class="stat-value" id="statProyectos">82</span>
+          <span class="stat-label">Proyectos Mineros</span>
+        </div>
+        <div class="header-stat danger">
+          <span class="stat-value" id="statAlertas">0</span>
+          <span class="stat-label">Alertas Proximidad</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="sidebar">
+
+      <!-- Layer Controls -->
+      <div class="control-panel">
+        <div class="panel-header" onclick="togglePanel(this)">
+          <h3><i class="fa-solid fa-layer-group"></i> Capas del Mapa</h3>
+          <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="panel-body">
+          <label class="layer-toggle">
+            <input type="checkbox" id="layerGlaciares" checked>
+            <span class="toggle-switch"></span>
+            <div class="layer-info">
+              <span class="layer-name">Glaciares</span>
+              <span class="layer-count" id="countGlaciares">— puntos</span>
+            </div>
+          </label>
+          <label class="layer-toggle periglacial">
+            <input type="checkbox" id="layerPeriglacial" checked>
+            <span class="toggle-switch"></span>
+            <div class="layer-info">
+              <span class="layer-name">Ambiente Periglacial</span>
+              <span class="layer-count" id="countPeriglacial">— puntos</span>
+            </div>
+          </label>
+          <label class="layer-toggle mining">
+            <input type="checkbox" id="layerMineria" checked>
+            <span class="toggle-switch"></span>
+            <div class="layer-info">
+              <span class="layer-name">Proyectos Mineros</span>
+              <span class="layer-count" id="countMineria">— proyectos</span>
+            </div>
+          </label>
+          <label class="layer-toggle alerts">
+            <input type="checkbox" id="layerAlertas" checked>
+            <span class="toggle-switch"></span>
+            <div class="layer-info">
+              <span class="layer-name">Alertas de Proximidad</span>
+              <span class="layer-count" id="countAlertas">radio configurable</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Province Filter -->
+      <div class="control-panel">
+        <div class="panel-header" onclick="togglePanel(this)">
+          <h3><i class="fa-solid fa-map-location-dot"></i> Provincia</h3>
+          <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="panel-body">
+          <div class="filter-group">
+            <select id="filterProvincia">
+              <option value="">Todas las provincias</option>
+              <option value="Jujuy">Jujuy</option>
+              <option value="Salta">Salta</option>
+              <option value="Tucumán">Tucumán</option>
+              <option value="Catamarca">Catamarca</option>
+              <option value="La Rioja">La Rioja</option>
+              <option value="San Juan">San Juan</option>
+              <option value="Mendoza">Mendoza</option>
+              <option value="Neuquén">Neuquén</option>
+              <option value="Río Negro">Río Negro</option>
+              <option value="Chubut">Chubut</option>
+              <option value="Santa Cruz">Santa Cruz</option>
+              <option value="Tierra del Fuego">Tierra del Fuego</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Glacier Type Filter -->
+      <div class="control-panel">
+        <div class="panel-header" onclick="togglePanel(this)">
+          <h3><i class="fa-solid fa-snowflake"></i> Tipo de Glaciar</h3>
+          <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="panel-body">
+          <div class="checkbox-group" id="filterTipoGlaciar">
+            <div class="chip active" data-value="Glaciar" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: var(--glacier-primary); font-size:6px"></i> Glaciar
+            </div>
+            <div class="chip active" data-value="Ambiente Periglacial" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: var(--periglacial); font-size:6px"></i> Periglacial
+            </div>
+          </div>
+          <div class="filter-group" style="margin-top: 8px;">
+            <label>Superficie mínima (km²)</label>
+            <div class="range-container">
+              <input type="range" id="filterSuperficie" min="0" max="100" value="0" step="0.1" oninput="updateRangeLabel(this)">
+              <div class="range-value" id="filterSuperficieLabel">≥ 0 km²</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mineral Filter -->
+      <div class="control-panel">
+        <div class="panel-header" onclick="togglePanel(this)">
+          <h3><i class="fa-solid fa-gem"></i> Minerales</h3>
+          <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="panel-body">
+          <div class="checkbox-group" id="filterMineral">
+            <div class="chip mineral-cobre active" data-value="Cobre" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #e67e22; font-size:6px"></i> Cobre
+            </div>
+            <div class="chip mineral-oro active" data-value="Oro" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #f1c40f; font-size:6px"></i> Oro
+            </div>
+            <div class="chip mineral-plata active" data-value="Plata" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #bdc3c7; font-size:6px"></i> Plata
+            </div>
+            <div class="chip mineral-litio active" data-value="Litio" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #00d2ff; font-size:6px"></i> Litio
+            </div>
+            <div class="chip active" data-value="Uranio" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #27ae60; font-size:6px"></i> Uranio
+            </div>
+            <div class="chip active" data-value="Potasio" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #e74c3c; font-size:6px"></i> Potasio
+            </div>
+            <div class="chip active" data-value="Hierro" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #8b4513; font-size:6px"></i> Hierro
+            </div>
+            <div class="chip active" data-value="Plomo" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #7f8c8d; font-size:6px"></i> Plomo
+            </div>
+            <div class="chip active" data-value="Carbón" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #2c3e50; font-size:6px"></i> Carbón
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project Stage Filter -->
+      <div class="control-panel">
+        <div class="panel-header" onclick="togglePanel(this)">
+          <h3><i class="fa-solid fa-chart-gantt"></i> Etapa del Proyecto</h3>
+          <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="panel-body">
+          <div class="checkbox-group" id="filterEtapa">
+            <div class="chip active" data-value="Producción" onclick="toggleChip(this)">Producción</div>
+            <div class="chip active" data-value="Construcción" onclick="toggleChip(this)">Construcción</div>
+            <div class="chip active" data-value="Factibilidad" onclick="toggleChip(this)">Factibilidad</div>
+            <div class="chip active" data-value="Prefactibilidad" onclick="toggleChip(this)">Prefactibilidad</div>
+            <div class="chip active" data-value="Exploración avanzada" onclick="toggleChip(this)">Exploración</div>
+            <div class="chip active" data-value="Evaluación económica preliminar" onclick="toggleChip(this)">Evaluación</div>
+            <div class="chip active" data-value="Mantenimiento" onclick="toggleChip(this)">Mantenimiento</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proximity Radius -->
+      <div class="control-panel">
+        <div class="panel-header" onclick="togglePanel(this)">
+          <h3><i class="fa-solid fa-bullseye"></i> Radio de Proximidad</h3>
+          <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="panel-body">
+          <div class="radius-selector" id="radiusSelector">
+            <button class="radius-btn" data-radius="10" onclick="setRadius(this)">10 km</button>
+            <button class="radius-btn active" data-radius="25" onclick="setRadius(this)">25 km</button>
+            <button class="radius-btn" data-radius="50" onclick="setRadius(this)">50 km</button>
+            <button class="radius-btn" data-radius="100" onclick="setRadius(this)">100 km</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset Button -->
+      <button class="btn-reset" onclick="resetFilters()">
+        <i class="fa-solid fa-rotate-left"></i> Restablecer Filtros
+      </button>
+
+    </aside>
+
+    <!-- ═══ MAP ═══ -->
+    <main class="map-container">
+      <div id="map"></div>
+
+      <!-- Province Info Bar -->
+      <div class="province-info-bar hidden" id="provinceInfoBar">
+        <span class="province-name" id="provinceInfoName">—</span>
+        <div class="province-stat">
+          <span class="value" id="provinceInfoGlaciares" style="color: var(--glacier-primary)">0</span>
+          <span class="label">Geoformas</span>
+        </div>
+        <div class="province-stat">
+          <span class="value" id="provinceInfoSuperficie" style="color: var(--info)">0</span>
+          <span class="label">km²</span>
+        </div>
+        <div class="province-stat">
+          <span class="value" id="provinceInfoMineria" style="color: var(--mining-primary)">0</span>
+          <span class="label">Proyectos</span>
+        </div>
+        <div class="province-stat">
+          <span class="value" id="provinceInfoAlertas" style="color: var(--danger)">0</span>
+          <span class="label">Alertas</span>
+        </div>
+        <button class="btn-close" onclick="clearProvinceFilter()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </main>
+
+    <!-- ═══ RIGHT PANELS ═══ -->
+    <aside class="panels">
+
+      <!-- Tab Navigation -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="tab-overview" onclick="switchTab(this)">Resumen</button>
+        <button class="tab-btn" data-tab="tab-analysis" onclick="switchTab(this)">Análisis</button>
+        <button class="tab-btn" data-tab="tab-minerals" onclick="switchTab(this)">Minerales</button>
+      </div>
+
+      <!-- TAB: Overview -->
+      <div class="tab-content active" id="tab-overview">
+        <!-- Key Metrics -->
+        <div class="metric-grid">
+          <div class="metric-card glacier">
+            <span class="metric-value" id="metricGlaciaresTotal">—</span>
+            <span class="metric-label">Glaciares</span>
+          </div>
+          <div class="metric-card periglacial">
+            <span class="metric-value" id="metricPeriglacialTotal">—</span>
+            <span class="metric-label">Amb. Periglacial</span>
+          </div>
+          <div class="metric-card mining">
+            <span class="metric-value" id="metricMineriaTotal">—</span>
+            <span class="metric-label">Proy. Mineros</span>
+          </div>
+          <div class="metric-card danger">
+            <span class="metric-value" id="metricAlertasTotal">—</span>
+            <span class="metric-label">En zona glaciar</span>
+          </div>
+          <div class="metric-card info">
+            <span class="metric-value" id="metricSupTotal">—</span>
+            <span class="metric-label">Superficie km²</span>
+          </div>
+          <div class="metric-card success">
+            <span class="metric-value" id="metricProvincias">12</span>
+            <span class="metric-label">Provincias</span>
+          </div>
+        </div>
+
+        <!-- Glaciers by Province -->
+        <div class="chart-container">
+          <h3><i class="fa-solid fa-chart-bar"></i> Geoformas por Provincia</h3>
+          <div class="chart-wrapper tall">
+            <canvas id="chartGlaciaresProvince"></canvas>
+          </div>
+        </div>
+
+        <!-- Surface by Province -->
+        <div class="chart-container">
+          <h3><i class="fa-solid fa-mountain-sun"></i> Superficie Glaciar (km²)</h3>
+          <div class="chart-wrapper tall">
+            <canvas id="chartSuperficieProvince"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Analysis -->
+      <div class="tab-content" id="tab-analysis">
+        <!-- Mining by Province -->
+        <div class="chart-container">
+          <h3><i class="fa-solid fa-industry"></i> Proyectos Mineros por Provincia</h3>
+          <div class="chart-wrapper tall">
+            <canvas id="chartMineriaProvince"></canvas>
+          </div>
+        </div>
+
+        <!-- Mining by Stage -->
+        <div class="chart-container">
+          <h3><i class="fa-solid fa-chart-gantt"></i> Proyectos por Etapa</h3>
+          <div class="chart-wrapper">
+            <canvas id="chartMineriaEtapa"></canvas>
+          </div>
+        </div>
+
+        <!-- Proximity analysis -->
+        <div class="chart-container">
+          <h3><i class="fa-solid fa-triangle-exclamation"></i> Proyectos cerca de Glaciares</h3>
+          <div class="chart-wrapper tall">
+            <canvas id="chartProximidad"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Minerals -->
+      <div class="tab-content" id="tab-minerals">
+        <!-- Mineral distribution in glacier zones -->
+        <div class="chart-container">
+          <h3><i class="fa-solid fa-gem"></i> Mineral predominante en áreas glaciares</h3>
+          <div class="chart-wrapper">
+            <canvas id="chartMineralGlaciar"></canvas>
+          </div>
+        </div>
+
+        <!-- Glaciers associated with each mineral -->
+        <div class="chart-container">
+          <h3><i class="fa-solid fa-snowflake"></i> Glaciares asociados por mineral</h3>
+          <div class="chart-wrapper tall">
+            <canvas id="chartGlaciaresPorMineral"></canvas>
+          </div>
+        </div>
+
+        <!-- Mineral ranking -->
+        <div class="chart-container">
+          <h3><i class="fa-solid fa-ranking-star"></i> Ranking de presencia mineral</h3>
+          <div class="chart-wrapper">
+            <canvas id="chartMineralRanking"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- Libraries -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Data -->
+  <script src="data/glaciares.js"></script>
+  <script src="data/mineria.js"></script>
+  <script src="data/provincias.js"></script>
+
+  <!-- App Modules -->
+  <script src="js/analysis.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/filters.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
