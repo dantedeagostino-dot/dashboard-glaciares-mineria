@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Dashboard interactivo para el análisis de glaciares y proyectos mineros en Argentina. Inventario Nacional de Glaciares + Cartera SIACAM.">
+  <meta name="description"
+    content="Dashboard interactivo para el análisis de glaciares y proyectos mineros en Argentina. Inventario Nacional de Glaciares + Cartera SIACAM.">
   <title>Glaciares & Minería — Dashboard Argentina</title>
 
   <!-- Leaflet CSS -->
@@ -13,6 +15,7 @@
   <!-- App CSS -->
   <link rel="stylesheet" href="css/styles.css" />
 </head>
+
 <body>
 
   <!-- Loading Overlay -->
@@ -32,7 +35,10 @@
           </div>
           <div>
             <h1>Glaciares & Minería</h1>
-            <div class="subtitle">República Argentina — Análisis Espacial</div>
+            <div class="subtitle">República Argentina — Análisis Espacial · Powered by <a
+                href="https://colossuslab.tech" target="_blank" rel="noopener"
+                style="color: var(--glacier-primary); text-decoration: none; font-weight: 600;">ColossusLab.tech</a>
+            </div>
           </div>
         </div>
       </div>
@@ -147,7 +153,8 @@
           <div class="filter-group" style="margin-top: 8px;">
             <label>Superficie mínima (km²)</label>
             <div class="range-container">
-              <input type="range" id="filterSuperficie" min="0" max="100" value="0" step="0.1" oninput="updateRangeLabel(this)">
+              <input type="range" id="filterSuperficie" min="0" max="100" value="0" step="0.1"
+                oninput="updateRangeLabel(this)">
               <div class="range-value" id="filterSuperficieLabel">≥ 0 km²</div>
             </div>
           </div>
@@ -206,7 +213,8 @@
             <div class="chip active" data-value="Factibilidad" onclick="toggleChip(this)">Factibilidad</div>
             <div class="chip active" data-value="Prefactibilidad" onclick="toggleChip(this)">Prefactibilidad</div>
             <div class="chip active" data-value="Exploración avanzada" onclick="toggleChip(this)">Exploración</div>
-            <div class="chip active" data-value="Evaluación económica preliminar" onclick="toggleChip(this)">Evaluación</div>
+            <div class="chip active" data-value="Evaluación económica preliminar" onclick="toggleChip(this)">Evaluación
+            </div>
             <div class="chip active" data-value="Mantenimiento" onclick="toggleChip(this)">Mantenimiento</div>
           </div>
         </div>
@@ -393,4 +401,5 @@
   <script src="js/app.js"></script>
 
 </body>
+
 </html>
