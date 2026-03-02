@@ -53,6 +53,22 @@
             attribution: 'IGN Argentina'
         }).addTo(map);
 
+        // Custom label: Islas Malvinas (override English tile label)
+        map.createPane('labelsOverride');
+        map.getPane('labelsOverride').style.zIndex = 650;
+        map.getPane('labelsOverride').style.pointerEvents = 'none';
+
+        const malvinasLabel = L.marker([-51.75, -59.0], {
+            pane: 'labelsOverride',
+            interactive: false,
+            icon: L.divIcon({
+                className: 'malvinas-label',
+                html: '<span style="color:#b0b8c4;font-family:\'Inter\',sans-serif;font-size:12px;font-weight:400;letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap;text-shadow:0 0 8px #0d1117,0 0 16px #0d1117,0 0 24px #0d1117,1px 1px 4px #0d1117,-1px -1px 4px #0d1117,2px 0 6px #0d1117,-2px 0 6px #0d1117,0 2px 6px #0d1117,0 -2px 6px #0d1117;">ISLAS MALVINAS</span>',
+                iconSize: [140, 20],
+                iconAnchor: [70, 10]
+            })
+        }).addTo(map);
+
         // Initialize empty layer groups
         glaciarLayer = L.layerGroup().addTo(map);
         periglacialLayer = L.layerGroup().addTo(map);
