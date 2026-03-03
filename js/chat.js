@@ -245,17 +245,95 @@
                 <div class="bubble-icon"><i class="fa-solid fa-brain"></i></div>
                 <div class="bubble-text">${content}</div>
             `;
+            // Render any inline chart directives after DOM insertion
+            chatMessages.appendChild(msgDiv);
+            renderChatCharts(msgDiv);
         } else if (sender === 'error') {
             msgDiv.innerHTML = `
                 <div class="bubble-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <div class="bubble-text"><p>${content}</p></div>
             `;
+            chatMessages.appendChild(msgDiv);
         } else {
             msgDiv.innerHTML = `<div class="bubble-text">${content}</div>`;
+            chatMessages.appendChild(msgDiv);
         }
 
-        chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // ── Inline Chart Renderer ────────────────────────────────────
+    function renderChatCharts(container) {
+        const bubbleText = container.querySelector('.bubble-text');
+        if (!bubbleText) return;
+
+        // Match [CHART:type|labels:a,b,c|values:1,2,3|title:Título]
+        const chartRegex = /\[CHART:(bar|pie|doughnut)\|labels:([^|]+)\|values:([^|]+)\|title:([^\]]+)\]/g;
+        let html = bubbleText.innerHTML;
+        let chartIndex = 0;
+        const chartConfigs = [];
+
+        html = html.replace(chartRegex, (match, type, labelsStr, valuesStr, title) => {
+            const id = `chat-chart-${Date.now()}-${chartIndex++}`;
+            const labels = labelsStr.split(',').map(l => l.trim());
+            const values = valuesStr.split(',').map(v => parseFloat(v.trim()));
+            chartConfigs.push({ id, type, labels, values, title: title.trim() });
+            return `<div class="chat-chart-container"><canvas id="${id}" height="200"></canvas></div>`;
+        });
+
+        if (chartConfigs.length === 0) return;
+        bubbleText.innerHTML = html;
+
+        // Chart.js color palette matching dashboard style
+        const palette = [
+            '#00d4ff', '#a78bfa', '#f59e0b', '#ef4444', '#10b981',
+            '#3b82f6', '#e67e22', '#f1c40f', '#9b59b6', '#1abc9c'
+        ];
+
+        chartConfigs.forEach(cfg => {
+            const canvas = document.getElementById(cfg.id);
+            if (!canvas) return;
+
+            const colors = cfg.labels.map((_, i) => palette[i % palette.length]);
+
+            new Chart(canvas, {
+                type: cfg.type,
+                data: {
+                    labels: cfg.labels,
+                    datasets: [{
+                        label: cfg.title,
+                        data: cfg.values,
+                        backgroundColor: cfg.type === 'bar'
+                            ? colors.map(c => c + '99')
+                            : colors,
+                        borderColor: cfg.type === 'bar' ? colors : '#1a1f2e',
+                        borderWidth: cfg.type === 'bar' ? 1 : 2,
+                        borderRadius: cfg.type === 'bar' ? 4 : 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: cfg.type !== 'bar',
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        title: {
+                            display: true,
+                            text: cfg.title,
+                            color: '#e2e8f0',
+                            font: { size: 12, weight: '600' }
+                        }
+                    },
+                    scales: cfg.type === 'bar' ? {
+                        x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { display: false } },
+                        y: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(148,163,184,0.1)' } }
+                    } : undefined
+                }
+            });
+        });
     }
 
     function showTypingIndicator() {

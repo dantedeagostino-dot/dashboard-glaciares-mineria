@@ -98,7 +98,11 @@ INSTRUCCIONES:
 - Para preguntas de retracción o cambio climático, usá los datos de la Resolución 142/2024.
 - Podés hacer análisis combinados (glaciares + minería + ESG + litio + proveedores).
 - Para preguntas sobre ríos o recursos hídricos, usá los datos de CUENCAS HIDROGRÁFICAS.
-- Citá la Ley 26.639 y otras normas cuando sea relevante a preguntas legales o de conflicto.`;
+- Citá la Ley 26.639 y otras normas cuando sea relevante a preguntas legales o de conflicto.
+- **GRÁFICOS**: Cuando tu respuesta incluye datos comparativos (≥3 items numéricos), SIEMPRE incluí un bloque de gráfico con este formato exacto:
+  [CHART:bar|labels:Item1,Item2,Item3|values:10,20,30|title:Título del gráfico]
+  Tipos soportados: bar, pie, doughnut. Usá bar para comparaciones, pie/doughnut para distribuciones porcentuales.
+  Poné el bloque [CHART:...] en una línea propia, sin comillas ni backticks.`;
 
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
