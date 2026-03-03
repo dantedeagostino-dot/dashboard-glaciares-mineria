@@ -46,6 +46,41 @@
             });
         }
 
+        // ── Export conversation ──
+        const exportBtn = document.getElementById('chatExportBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                if (conversationHistory.length === 0) return;
+
+                const state = typeof Filters !== 'undefined' ? Filters.state : {};
+                const now = new Date().toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' });
+
+                let md = `# Informe ColossusAI — Dashboard Glaciares & Minería\n\n`;
+                md += `**Fecha:** ${now}\n`;
+                md += `**Filtros activos:** Provincia: ${state.provincia || 'Todas'} | Radio: ${state.proximityRadius || 25} km\n\n---\n\n`;
+
+                conversationHistory.forEach(msg => {
+                    if (msg.role === 'user') {
+                        md += `### 👤 Usuario\n${msg.parts[0].text}\n\n`;
+                    } else {
+                        // Clean chart directives for export
+                        let text = msg.parts[0].text.replace(/\[CHART:[^\]]+\]/g, '_(gráfico generado en chat)_');
+                        md += `### 🧠 ColossusAI\n${text}\n\n---\n\n`;
+                    }
+                });
+
+                md += `\n_Generado por ColossusAI — ColossusLab.tech_\n`;
+
+                const blob = new Blob([md], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `informe-colossusai-${new Date().toISOString().slice(0, 10)}.md`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
         // ── Suggestion chips ──
         const suggestions = document.getElementById('chatSuggestions');
         if (suggestions) {
