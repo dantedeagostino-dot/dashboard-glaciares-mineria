@@ -305,11 +305,11 @@
                 .join('\n');
         }
 
-        // 3. Todos los glaciares
+        // 3. Todos los glaciares (con coordenadas)
         let todosLosGlaciares = '';
         if (typeof GLACIARES_DATA !== 'undefined') {
             todosLosGlaciares = GLACIARES_DATA
-                .map(g => `${g.nombre}|${g.provincia}|${g.tipo}|${g.subtipo}|${g.cuenca}|${g.superficie_km2}km²`)
+                .map(g => `${g.nombre}|${g.provincia}|${g.tipo}|${g.subtipo}|${g.cuenca}|${g.superficie_km2}km²|lat:${g.lat}|lng:${g.lng}`)
                 .join('\n');
         }
 
@@ -332,11 +332,11 @@
                 .join('\n');
         }
 
-        // 5. Todos los proyectos
+        // 5. Todos los proyectos (con coordenadas)
         let todosLosProyectos = '';
         if (typeof MINERIA_DATA !== 'undefined') {
             todosLosProyectos = MINERIA_DATA
-                .map(m => `${m.nombre}|${m.empresa}|${m.mineral}|${m.estado}|${m.provincia}`)
+                .map(m => `${m.nombre}|${m.empresa}|${m.mineral}|${m.estado}|${m.provincia}|lat:${m.lat}|lng:${m.lng}`)
                 .join('\n');
         }
 
@@ -394,6 +394,38 @@
             ].join('\n');
         }
 
+        // 11. Proximity analysis (pre-computed Haversine distances)
+        let proximityAnalysis = '';
+        if (typeof SpatialAnalysis !== 'undefined' && typeof GLACIARES_DATA !== 'undefined' && typeof MINERIA_DATA !== 'undefined') {
+            const proximityResults = SpatialAnalysis.runProximityAnalysis(MINERIA_DATA, GLACIARES_DATA, activeRadius);
+            proximityAnalysis = proximityResults
+                .filter(p => p.glaciersInRadius > 0)
+                .map(p => {
+                    const top5 = p.glaciersInRadiusList.slice(0, 5)
+                        .map(g => `${g.nombre}(${g.distance_km}km)`)
+                        .join(', ');
+                    return `${p.project.nombre}(${p.project.mineral},${p.project.provincia})|glaciar_más_cercano:${p.nearestGlacier?.nombre}|dist:${p.nearestDistance}km|riesgo:${p.risk}|glaciares_en_radio:${p.glaciersInRadius}|cercanos:[${top5}]`;
+                })
+                .join('\n');
+        }
+
+        // 12. Cuencas hidrográficas summary
+        let cuencasResumen = '';
+        if (typeof GLACIARES_DATA !== 'undefined') {
+            const cuencaMap = {};
+            GLACIARES_DATA.forEach(g => {
+                if (!cuencaMap[g.cuenca]) cuencaMap[g.cuenca] = { count: 0, superficie: 0, provincias: new Set(), glaciares: [] };
+                cuencaMap[g.cuenca].count++;
+                cuencaMap[g.cuenca].superficie += g.superficie_km2;
+                cuencaMap[g.cuenca].provincias.add(g.provincia);
+                cuencaMap[g.cuenca].glaciares.push(g.nombre);
+            });
+            cuencasResumen = Object.entries(cuencaMap)
+                .sort((a, b) => b[1].superficie - a[1].superficie)
+                .map(([cuenca, d]) => `${cuenca}: ${d.superficie.toFixed(1)} km² | ${d.count} geoformas | Provincias: ${[...d.provincias].join(', ')} | Glaciares: ${d.glaciares.join(', ')}`)
+                .join('\n');
+        }
+
         return {
             filtrosActivos: `Provincia: ${activeProvince} | Radio: ${activeRadius} km | Tipos: ${activeTypes.join(', ')}`,
             rankingProvinciasGlaciar: rankingProvincias,
@@ -405,6 +437,8 @@
             litioEspecializado: litioContextData,
             esgIndicadores: esgContextData,
             cadenaSuministros: capminContextData,
+            proximidadReal: proximityAnalysis,
+            cuencasHidrograficas: cuencasResumen,
         };
     }
 

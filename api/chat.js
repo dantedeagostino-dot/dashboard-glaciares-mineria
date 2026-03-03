@@ -37,7 +37,7 @@ ${context?.rankingProvinciasGlaciar || 'No disponible'}
 TOP 10 GLACIARES MÁS GRANDES:
 ${context?.topGlaciares || 'No disponible'}
 
-REGISTRO COMPLETO DE GLACIARES (nombre|provincia|tipo|subtipo|cuenca|superficie):
+REGISTRO COMPLETO DE GLACIARES (nombre|provincia|tipo|subtipo|cuenca|superficie|lat|lng):
 ${context?.todosLosGlaciares || 'No disponible'}
 
 ═══════════════════════════════════════════
@@ -47,7 +47,7 @@ BASE DE DATOS 2: PROYECTOS MINEROS (SIACAM — Secretaría de Minería)
 RESUMEN POR MINERAL:
 ${context?.resumenPorMineral || 'No disponible'}
 
-REGISTRO COMPLETO DE PROYECTOS (nombre|empresa|mineral|estado|provincia):
+REGISTRO COMPLETO DE PROYECTOS (nombre|empresa|mineral|estado|provincia|lat|lng):
 ${context?.todosLosProyectos || 'No disponible'}
 
 ═══════════════════════════════════════════
@@ -66,16 +66,33 @@ ${context?.cadenaSuministros || 'CAPMIN: 180+ empresas proveedoras. ~65% son PyM
 ═══════════════════════════════════════════
 
 ═══════════════════════════════════════════
-FILTROS ACTIVOS EN EL DASHBOARD:
-${context?.filtrosActivos || 'Sin filtros'}
+ANÁLISIS DE PROXIMIDAD ESPACIAL (distancias reales Haversine pre-calculadas):
+Radio actual del dashboard: ${context?.filtrosActivos || '25 km'}
+Proyectos con glaciares dentro del radio (proyecto|glaciar_cercano|distancia|riesgo|cantidad):
+${context?.proximidadReal || 'Sin alertas de proximidad'}
+═══════════════════════════════════════════
+
+═══════════════════════════════════════════
+CUENCAS HIDROGRÁFICAS (cuenca|superficie|geoformas|provincias|glaciares):
+${context?.cuencasHidrograficas || 'No disponible'}
+═══════════════════════════════════════════
+
+═══════════════════════════════════════════
+MARCO LEGAL ARGENTINO:
+- Ley 26.639 (Régimen de Presupuestos Mínimos para la Preservación de Glaciares): prohíbe actividades que puedan afectar glaciares y ambiente periglacial, incluyendo exploración y explotación minera.
+- Resolución 142/2024: Actualización del Inventario Nacional de Glaciares para los Andes Desérticos (NOA).
+- Ley 24.585 (Protección Ambiental para la Actividad Minera): regula el impacto ambiental de la minería.
 ═══════════════════════════════════════════
 
 INSTRUCCIONES:
 - Usá los datos anteriores para responder con precisión y números reales.
+- **USÁS las distancias de proximidad pre-calculadas** cuando te pregunten sobre glaciares cerca de minería. NO adivines distancias.
 - Hacé análisis comparativos y rankings cuando sea útil (tablas Markdown si hay más de 3 items).
 - Si tenés historial de conversación, considerá el contexto previo para dar respuestas coherentes.
 - Para preguntas de retracción o cambio climático, usá los datos de la Resolución 142/2024.
-- Podés hacer análisis combinados (glaciares + minería + ESG + litio + proveedores).`;
+- Podés hacer análisis combinados (glaciares + minería + ESG + litio + proveedores).
+- Para preguntas sobre ríos o recursos hídricos, usá los datos de CUENCAS HIDROGRÁFICAS.
+- Citá la Ley 26.639 y otras normas cuando sea relevante a preguntas legales o de conflicto.`;
 
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
