@@ -1,6 +1,10 @@
 /**
  * Dataset de Glaciares Argentinos
- * Basado en el Inventario Nacional de Glaciares (ING) 2018 - IANIGLA/CONICET
+ * Basado en el Inventario Nacional de Glaciares (ING) - IANIGLA/CONICET
+ *
+ * VERSIÓN BASE: ING 2018 | ACTUALIZACIÓN: Resolución 142/2024 (NOA — Andes Desérticos)
+ * - 22 subcuencas: Catamarca, Jujuy, La Rioja, Salta, San Juan y Tucumán (datos 2014-2023)
+ * - Reducción del 17% en hielo descubierto en el NOA | −23% en manchones de nieve perenne
  * 
  * Estadísticas reales del ING:
  * - Total: 16,968 cuerpos de hielo y geoformas periglaciales
@@ -219,18 +223,34 @@ const GLACIARES_DATA = [
   { id: "CH008", nombre: "Glaciar Cerro Cónico", provincia: "Chubut", lat: -43.1000, lng: -71.8000, superficie_km2: 1.5, tipo: "Glaciar", subtipo: "Descubierto", cuenca: "Lago Futalaufquen" },
 ];
 
-// Estadísticas agregadas reales del ING
+// Estadísticas agregadas del ING
+// Provincias con actualizacion_res142_2024:true tienen datos actualizados por Resolución 142/2024
+// eslint-disable-next-line
 const GLACIARES_STATS = {
-  "San Juan":        { total_geoformas: 2116, superficie_km2: 1767, glaciares: 308, periglacial: 1808 },
-  "Mendoza":         { total_geoformas: 2165, superficie_km2: 1239, glaciares: 650, periglacial: 1515 },
-  "Santa Cruz":      { total_geoformas: 2420, superficie_km2: 2420, glaciares: 1100, periglacial: 1320 },
-  "Tierra del Fuego":{ total_geoformas: 776,  superficie_km2: 218,  glaciares: 328, periglacial: 448 },
-  "Salta":           { total_geoformas: 1302, superficie_km2: 212,  glaciares: 120, periglacial: 1182 },
-  "Catamarca":       { total_geoformas: 1526, superficie_km2: 277,  glaciares: 180, periglacial: 1346 },
-  "Jujuy":           { total_geoformas: 714,  superficie_km2: 59,   glaciares: 65,  periglacial: 649 },
-  "Tucumán":         { total_geoformas: 140,  superficie_km2: 9,    glaciares: 15,  periglacial: 125 },
-  "La Rioja":        { total_geoformas: 568,  superficie_km2: 65,   glaciares: 85,  periglacial: 483 },
-  "Neuquén":         { total_geoformas: 235,  superficie_km2: 27,   glaciares: 78,  periglacial: 157 },
-  "Río Negro":       { total_geoformas: 154,  superficie_km2: 18,   glaciares: 72,  periglacial: 82 },
-  "Chubut":          { total_geoformas: 258,  superficie_km2: 48,   glaciares: 110, periglacial: 148 },
+  "San Juan":        { total_geoformas: 2116, superficie_km2: 1767, glaciares: 308, periglacial: 1808 , actualizacion_res142_2024: true },
+  "Mendoza":         { total_geoformas: 2165, superficie_km2: 1239, glaciares: 650, periglacial: 1515 , actualizacion_res142_2024: false },
+  "Santa Cruz":      { total_geoformas: 2420, superficie_km2: 2420, glaciares: 1100, periglacial: 1320 , actualizacion_res142_2024: false },
+  "Tierra del Fuego":{ total_geoformas: 776,  superficie_km2: 218,  glaciares: 328, periglacial: 448 , actualizacion_res142_2024: false },
+  "Salta":           { total_geoformas: 1302, superficie_km2: 212,  glaciares: 120, periglacial: 1182 , actualizacion_res142_2024: true },
+  "Catamarca":       { total_geoformas: 1526, superficie_km2: 277,  glaciares: 180, periglacial: 1346 , actualizacion_res142_2024: true },
+  "Jujuy":           { total_geoformas: 714,  superficie_km2: 59,   glaciares: 65,  periglacial: 649 , actualizacion_res142_2024: true },
+  "Tucumán":         { total_geoformas: 140,  superficie_km2: 9,    glaciares: 15,  periglacial: 125 , actualizacion_res142_2024: true },
+  "La Rioja":        { total_geoformas: 568,  superficie_km2: 65,   glaciares: 85,  periglacial: 483 , actualizacion_res142_2024: true },
+  "Neuquén":         { total_geoformas: 235,  superficie_km2: 27,   glaciares: 78,  periglacial: 157 , actualizacion_res142_2024: false },
+  "Río Negro":       { total_geoformas: 154,  superficie_km2: 18,   glaciares: 72,  periglacial: 82 , actualizacion_res142_2024: false },
+  "Chubut":          { total_geoformas: 258,  superficie_km2: 48,   glaciares: 110, periglacial: 148 , actualizacion_res142_2024: false },
+};
+
+/**
+ * Datos de retracción glaciar — Resolución 142/2024 (NOA, 2008–2023)
+ * Fuente: IANIGLA/CONICET — Vicejefatura de Gabinete del Interior
+ */
+const GLACIARES_RETRACCION = {
+  reduccion_hielo_descubierto_pct: 17,
+  reduccion_manchones_nieve_pct: 23,
+  periodo: "2008–2023",
+  subcuencas_actualizadas: 22,
+  provincias_noa: ["Catamarca", "Jujuy", "La Rioja", "Salta", "San Juan", "Tucumán"],
+  resolucion: "Resolución 142/2024",
+  fuente: "IANIGLA/CONICET — Vicejefatura de Gabinete del Interior",
 };

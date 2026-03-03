@@ -222,6 +222,12 @@
         const activeMinerals = [];
         document.querySelectorAll('#filterMineral .chip.active').forEach(c => activeMinerals.push(c.dataset.value));
 
+        // ── 7. Datos de retracción ING 2024 (Resolución 142/2024) ──
+        let retraccionData = '';
+        if (typeof GLACIARES_RETRACCION !== 'undefined') {
+            retraccionData = `Resolución 142/2024 (NOA 2008–2023): −${GLACIARES_RETRACCION.reduccion_hielo_descubierto_pct}% hielo descubierto | −${GLACIARES_RETRACCION.reduccion_manchones_nieve_pct}% manchones de nieve | ${GLACIARES_RETRACCION.subcuencas_actualizadas} subcuencas actualizadas (22 en NOA/Cuyo)`;
+        }
+
         return {
             filtrosActivos: `Provincia vista: ${activeProvince} | Radio proximidad: ${activeRadius} km | Tipos glaciar: ${activeTypes.join(', ')}`,
             rankingProvinciasGlaciar: rankingProvincias,
@@ -229,6 +235,7 @@
             todosLosGlaciares,
             resumenPorMineral: resumenMineral,
             todosLosProyectos,
+            retraccionING2024: retraccionData,
         };
     }
 
