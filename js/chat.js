@@ -457,6 +457,39 @@
                 .join('\n');
         }
 
+        // 13. Derived metrics — pre-computed for the AI
+        let derivedMetrics = '';
+        if (typeof GLACIARES_STATS !== 'undefined' && typeof MINERIA_DATA !== 'undefined') {
+            // Mineral risk weights (toxicity/water impact)
+            const mineralRisk = { 'Cobre': 0.9, 'Oro': 0.85, 'Plata': 0.7, 'Litio': 0.6, 'Uranio': 0.95, 'Potasio': 0.4, 'Plomo': 0.8, 'Hierro': 0.5, 'Carbón': 0.65 };
+            const etapaRisk = { 'Producción': 1.0, 'Construcción': 0.8, 'Mantenimiento': 0.6, 'Factibilidad': 0.4, 'Prefactibilidad': 0.3, 'Exploración avanzada': 0.2, 'Evaluación económica preliminar': 0.1 };
+
+            // Per-province metrics
+            const provMetrics = Object.entries(GLACIARES_STATS).map(([prov, stats]) => {
+                const minCount = MINERIA_DATA.filter(m => m.provincia === prov).length;
+                const ratio = stats.total_geoformas > 0 ? (minCount / stats.total_geoformas * 1000).toFixed(2) : '0';
+                return `${prov}: densidad=${(stats.total_geoformas / (stats.superficie_km2 || 1) * 100).toFixed(1)} geoformas/100km² | ratio_minería=${ratio} proyectos/1000geoformas | proyectos=${minCount}`;
+            }).join('\n');
+
+            // Per-project risk score
+            let projectRiskScores = '';
+            if (typeof SpatialAnalysis !== 'undefined' && typeof GLACIARES_DATA !== 'undefined') {
+                const proxResults = SpatialAnalysis.runProximityAnalysis(MINERIA_DATA, GLACIARES_DATA, activeRadius);
+                projectRiskScores = proxResults
+                    .map(p => {
+                        const proxScore = p.nearestDistance <= 10 ? 1.0 : p.nearestDistance <= 25 ? 0.7 : p.nearestDistance <= 50 ? 0.4 : 0.1;
+                        const minScore = mineralRisk[p.project.mineral] || 0.5;
+                        const etaScore = etapaRisk[p.project.estado] || 0.3;
+                        const riskScore = ((proxScore * 0.5 + minScore * 0.3 + etaScore * 0.2) * 10).toFixed(1);
+                        return `${p.project.nombre}(${p.project.provincia}): riesgo_ambiental=${riskScore}/10 | prox=${p.nearestDistance}km | mineral=${p.project.mineral} | etapa=${p.project.estado}`;
+                    })
+                    .sort((a, b) => parseFloat(b.split('=')[1]) - parseFloat(a.split('=')[1]))
+                    .join('\n');
+            }
+
+            derivedMetrics = `MÉTRICAS POR PROVINCIA:\n${provMetrics}\n\nRISK SCORE POR PROYECTO (0-10, mayor=más riesgo):\n${projectRiskScores}`;
+        }
+
         return {
             filtrosActivos: `Provincia: ${activeProvince} | Radio: ${activeRadius} km | Tipos: ${activeTypes.join(', ')}`,
             rankingProvinciasGlaciar: rankingProvincias,
@@ -470,6 +503,7 @@
             cadenaSuministros: capminContextData,
             proximidadReal: proximityAnalysis,
             cuencasHidrograficas: cuencasResumen,
+            metricasDerivadas: derivedMetrics,
         };
     }
 

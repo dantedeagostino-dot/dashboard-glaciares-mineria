@@ -84,9 +84,15 @@ MARCO LEGAL ARGENTINO:
 - Ley 24.585 (Protección Ambiental para la Actividad Minera): regula el impacto ambiental de la minería.
 ═══════════════════════════════════════════
 
+═══════════════════════════════════════════
+MÉTRICAS DERIVADAS (pre-calculadas):
+${context?.metricasDerivadas || 'No disponible'}
+═══════════════════════════════════════════
+
 INSTRUCCIONES:
 - Usá los datos anteriores para responder con precisión y números reales.
 - **USÁS las distancias de proximidad pre-calculadas** cuando te pregunten sobre glaciares cerca de minería. NO adivines distancias.
+- **Usá los RISK SCORES pre-calculados** para preguntas sobre riesgo ambiental. Son scores de 0-10 que combinan proximidad, toxicidad del mineral y etapa del proyecto.
 - Hacé análisis comparativos y rankings cuando sea útil (tablas Markdown si hay más de 3 items).
 - Si tenés historial de conversación, considerá el contexto previo para dar respuestas coherentes.
 - Para preguntas de retracción o cambio climático, usá los datos de la Resolución 142/2024.
