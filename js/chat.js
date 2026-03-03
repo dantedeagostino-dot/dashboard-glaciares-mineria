@@ -305,12 +305,26 @@
                 .join('\n');
         }
 
-        // 3. Todos los glaciares (con coordenadas)
+        // 3. Glaciares — smart filtering by active province
         let todosLosGlaciares = '';
         if (typeof GLACIARES_DATA !== 'undefined') {
-            todosLosGlaciares = GLACIARES_DATA
-                .map(g => `${g.nombre}|${g.provincia}|${g.tipo}|${g.subtipo}|${g.cuenca}|${g.superficie_km2}km²|lat:${g.lat}|lng:${g.lng}`)
-                .join('\n');
+            if (activeProvince !== 'Todas') {
+                // Send full detail for selected province only
+                const provGlaciares = GLACIARES_DATA.filter(g => g.provincia === activeProvince);
+                todosLosGlaciares = `[DATOS DETALLADOS — ${activeProvince} (${provGlaciares.length} geoformas)]:\n` +
+                    provGlaciares
+                        .map(g => `${g.nombre}|${g.provincia}|${g.tipo}|${g.subtipo}|${g.cuenca}|${g.superficie_km2}km²|lat:${g.lat}|lng:${g.lng}`)
+                        .join('\n') +
+                    '\n\n[RESUMEN NACIONAL (otras provincias)]:\n' +
+                    Object.entries(GLACIARES_STATS)
+                        .filter(([prov]) => prov !== activeProvince)
+                        .map(([prov, s]) => `${prov}: ${s.total_geoformas} geoformas | ${s.superficie_km2} km²`)
+                        .join('\n');
+            } else {
+                todosLosGlaciares = GLACIARES_DATA
+                    .map(g => `${g.nombre}|${g.provincia}|${g.tipo}|${g.subtipo}|${g.cuenca}|${g.superficie_km2}km²|lat:${g.lat}|lng:${g.lng}`)
+                    .join('\n');
+            }
         }
 
         // 4. Resumen minería por mineral
@@ -332,12 +346,29 @@
                 .join('\n');
         }
 
-        // 5. Todos los proyectos (con coordenadas)
+        // 5. Proyectos mineros — smart filtering by active province
         let todosLosProyectos = '';
         if (typeof MINERIA_DATA !== 'undefined') {
-            todosLosProyectos = MINERIA_DATA
-                .map(m => `${m.nombre}|${m.empresa}|${m.mineral}|${m.estado}|${m.provincia}|lat:${m.lat}|lng:${m.lng}`)
-                .join('\n');
+            if (activeProvince !== 'Todas') {
+                const provMineria = MINERIA_DATA.filter(m => m.provincia === activeProvince);
+                const otrasProvincias = {};
+                MINERIA_DATA.filter(m => m.provincia !== activeProvince).forEach(m => {
+                    otrasProvincias[m.provincia] = (otrasProvincias[m.provincia] || 0) + 1;
+                });
+                todosLosProyectos = `[DATOS DETALLADOS — ${activeProvince} (${provMineria.length} proyectos)]:\n` +
+                    provMineria
+                        .map(m => `${m.nombre}|${m.empresa}|${m.mineral}|${m.estado}|${m.provincia}|lat:${m.lat}|lng:${m.lng}`)
+                        .join('\n') +
+                    '\n\n[RESUMEN NACIONAL (otras provincias)]:\n' +
+                    Object.entries(otrasProvincias)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([prov, count]) => `${prov}: ${count} proyectos`)
+                        .join('\n');
+            } else {
+                todosLosProyectos = MINERIA_DATA
+                    .map(m => `${m.nombre}|${m.empresa}|${m.mineral}|${m.estado}|${m.provincia}|lat:${m.lat}|lng:${m.lng}`)
+                    .join('\n');
+            }
         }
 
         // 6. Filtros activos
