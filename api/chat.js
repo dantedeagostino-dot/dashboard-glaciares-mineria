@@ -52,6 +52,11 @@ REGISTRO COMPLETO DE PROYECTOS (nombre|empresa|mineral|estado|provincia):
 ${context?.todosLosProyectos || 'No disponible'}
 
 ═══════════════════════════════════════════
+MÓDULO LITIO — DATOS ESPECIALIZADOS:
+${context?.litioEspecializado || 'Argentina: 2° en reservas globales de litio (20 Mt LCE, 22% mundial). Proyecciones: 120 kt LCE en 2025, 500 kt en 2030, 700 kt en 2035.'}
+═══════════════════════════════════════════
+
+═══════════════════════════════════════════
 FILTROS ACTIVOS EN EL DASHBOARD:
 ${context?.filtrosActivos || 'Sin filtros'}
 ═══════════════════════════════════════════

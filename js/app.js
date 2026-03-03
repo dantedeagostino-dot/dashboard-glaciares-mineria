@@ -9,6 +9,7 @@
     // ── State ──────────────────────────────────────
     let map;
     let glaciarLayer, periglacialLayer, mineriaLayer, alertsLayer, provinciaLayer;
+    let segeMarLayer; // SIGAM WMS — geological units (SEGEMAR)
     let currentProximityData = [];
     let currentMineralAnalysis = {};
 
@@ -53,6 +54,16 @@
             attribution: 'IGN Argentina'
         }).addTo(map);
 
+        // SIGAM — SEGEMAR Geological Units WMS (off by default, toggle via panel)
+        segeMarLayer = L.tileLayer.wms('https://sigam.segemar.gov.ar/geoserver/wms', {
+            layers: 'GeoMAP1M:NOA_unidad_geologica_1M,GeoMAP1M:Cuyo_unidad_geologica_1M',
+            format: 'image/png',
+            transparent: true,
+            opacity: 0.35,
+            attribution: 'SEGEMAR — SIGAM',
+            crossOrigin: true
+        }); // NOT added to map by default — user toggles it on
+
         // Custom label: Islas Malvinas (override English tile label)
         map.createPane('labelsOverride');
         map.getPane('labelsOverride').style.zIndex = 650;
@@ -89,6 +100,17 @@
         document.getElementById('layerAlertas').addEventListener('change', e => {
             e.target.checked ? map.addLayer(alertsLayer) : map.removeLayer(alertsLayer);
         });
+        // SIGAM Geological layer toggle
+        const segeMarToggle = document.getElementById('layerSegemar');
+        if (segeMarToggle) {
+            segeMarToggle.addEventListener('change', e => {
+                if (e.target.checked) {
+                    map.addLayer(segeMarLayer);
+                } else {
+                    map.removeLayer(segeMarLayer);
+                }
+            });
+        }
     }
 
     // ── Load Data ──────────────────────────────────

@@ -222,6 +222,26 @@
         const activeMinerals = [];
         document.querySelectorAll('#filterMineral .chip.active').forEach(c => activeMinerals.push(c.dataset.value));
 
+        // ── 8. Datos especializados de litio (data/litio.js) ──
+        let litioContextData = '';
+        if (typeof LITIO_DATA !== 'undefined') {
+            const enProd = LITIO_DATA.filter(l => l.estado === 'Producción');
+            const enCons = LITIO_DATA.filter(l => l.estado === 'Construcción');
+            const totalCap = LITIO_DATA.reduce((s, l) => s + (l.capacidad_tpa || 0), 0);
+            const ctx = typeof LITIO_CONTEXTO !== 'undefined' ? LITIO_CONTEXTO : {};
+            const proy = typeof LITIO_PROYECCIONES !== 'undefined'
+                ? LITIO_PROYECCIONES.map(p => `${p.año}: ${p.produccion_ktpa} kt LCE`).join(' | ')
+                : '';
+            litioContextData = [
+                `Argentina: 2° en reservas mundiales (${ctx.reservas_argentina_mt || 20} Mt LCE, ${ctx.reservas_mundo_pct || 22}% global)`,
+                `Proyectos en producción: ${enProd.map(l => `${l.nombre} (${l.capacidad_tpa?.toLocaleString()} t/año)`).join(', ')}`,
+                `Proyectos en construcción: ${enCons.map(l => `${l.nombre} (${l.empresa}) → ${l.capacidad_tpa?.toLocaleString()} t/año`).join(', ')}`,
+                `Capacidad total proyectada: ${totalCap.toLocaleString()} t/año de carbonato de litio`,
+                `Proyecciones de producción nacional: ${proy}`,
+                LITIO_DATA.map(l => `${l.nombre}|${l.provincia}|${l.tipo_yacimiento}|${l.compuesto}|${l.estado}|${l.capacidad_tpa || 'N/D'} t/año|${l.reservas_mt} Mt LCE`).join('\n'),
+            ].join('\n');
+        }
+
         // ── 7. Datos de retracción ING 2024 (Resolución 142/2024) ──
         let retraccionData = '';
         if (typeof GLACIARES_RETRACCION !== 'undefined') {
@@ -236,6 +256,7 @@
             resumenPorMineral: resumenMineral,
             todosLosProyectos,
             retraccionING2024: retraccionData,
+            litioEspecializado: litioContextData,
         };
     }
 
