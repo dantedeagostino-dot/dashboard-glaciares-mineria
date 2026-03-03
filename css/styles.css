@@ -239,7 +239,7 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  /* overflow: hidden eliminado — cortaba la segunda fila de chips */
   backdrop-filter: blur(8px);
   transition: border-color var(--transition-base);
 }
@@ -1550,7 +1550,8 @@ body {
   padding: 10px 16px;
   border-radius: 20px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
+  font-size: 16px;
+  /* ≥16px para evitar auto-zoom en iOS Safari */
   outline: none;
   transition: border-color var(--transition-fast);
 }
