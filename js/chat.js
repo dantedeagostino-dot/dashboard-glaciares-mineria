@@ -222,6 +222,29 @@
         const activeMinerals = [];
         document.querySelectorAll('#filterMineral .chip.active').forEach(c => activeMinerals.push(c.dataset.value));
 
+        // ── 9. ESG: EITI, TSM, empleo (data/esg.js) ──
+        let esgContextData = '';
+        if (typeof ESG_DATA !== 'undefined') {
+            const tsm = typeof TSM_INFO !== 'undefined' ? TSM_INFO : {};
+            const tot = typeof ESG_TOTALES !== 'undefined' ? ESG_TOTALES : {};
+            esgContextData = [
+                `TSM en Argentina: adoptado por CAEM en ${tsm.año_adopcion || 2016} | primera certificada: ${tsm.primera_mina_certificada || 'Veladero'} (${tsm.año_primera_certificacion || 2023})`,
+                `Total regalías sector minero: ~USD ${((tot.regalias_provinciales_total_usd || 0) / 1e6).toFixed(0)}M/año | Empleo directo: ${(tot.empleo_directo_total || 0).toLocaleString()} trabajadores | Mujeres: ${tot.porcentaje_mujeres_sector_pct || 11}%`,
+                `Proyectos con reporte GRI: ${tot.proyectos_con_gri || 8} | Proyectos en TSM: ${tot.proyectos_en_tsm || 28} | Certificados: ${tot.proyectos_tsm_certificados || 1}`,
+                ESG_DATA.map(e => `${e.proyecto}|${e.empresa}|${e.provincia}|Regalías USD ${((e.regalias_provinciales_usd || 0)/1e6).toFixed(1)}M|Empleo ${e.empleo_directo}|Mujeres ${e.porcentaje_mujeres_pct}%|TSM:${e.tsm_status}`).join('\n'),
+            ].join('\n');
+        }
+
+        // ── 10. Cadena de suministros: CAPMIN ──
+        let capminContextData = '';
+        if (typeof CAPMIN_DATA !== 'undefined') {
+            const info = typeof CAPMIN_INFO !== 'undefined' ? CAPMIN_INFO : {};
+            capminContextData = [
+                `CAPMIN: ${info.socios_aprox || 180}+ empresas proveedoras. PyMEs: ~${info.pymes_en_directorio_pct || 65}% del directorio`,
+                CAPMIN_DATA.map(c => `${c.nombre}|${c.rubro}|${c.productos}|Provincias: ${Array.isArray(c.provincias_activas) ? c.provincias_activas.join(', ') : c.provincias_activas}|${c.pyme ? 'PyME' : 'Gran empresa'}`).join('\n'),
+            ].join('\n');
+        }
+
         // ── 8. Datos especializados de litio (data/litio.js) ──
         let litioContextData = '';
         if (typeof LITIO_DATA !== 'undefined') {
@@ -257,6 +280,8 @@
             todosLosProyectos,
             retraccionING2024: retraccionData,
             litioEspecializado: litioContextData,
+            esgIndicadores: esgContextData,
+            cadenaSuministros: capminContextData,
         };
     }
 

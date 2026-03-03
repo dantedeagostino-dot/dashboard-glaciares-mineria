@@ -57,6 +57,16 @@ ${context?.litioEspecializado || 'Argentina: 2° en reservas globales de litio (
 ═══════════════════════════════════════════
 
 ═══════════════════════════════════════════
+ESG — INDICADORES DE SOSTENIBILIDAD (EITI / TSM / SIPA):
+${context?.esgIndicadores || 'TSM adoptado por CAEM en 2016. Veladero: primera mina certificada TSM en Argentina (2023). Empleo directo sectorial: ~27.500 trabajadores. Regalías provinciales estimadas: ~USD 210M/año.'}
+═══════════════════════════════════════════
+
+═══════════════════════════════════════════
+CADENA DE SUMINISTROS — DIRECTORIO CAPMIN:
+${context?.cadenaSuministros || 'CAPMIN: 180+ empresas proveedoras. ~65% son PyMEs. Rubros: explosivos, equipos, labortatorio, transporte, ambiental, tecnología, energía.'}
+═══════════════════════════════════════════
+
+═══════════════════════════════════════════
 FILTROS ACTIVOS EN EL DASHBOARD:
 ${context?.filtrosActivos || 'Sin filtros'}
 ═══════════════════════════════════════════
