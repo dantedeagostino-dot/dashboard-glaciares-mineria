@@ -454,6 +454,9 @@ body {
 .chip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex: 1 0 auto;
+  /* Permite crecer pero no encogerse por debajo de su contenido */
   gap: 6px;
   padding: 7px 14px;
   border-radius: 20px;
