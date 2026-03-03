@@ -449,16 +449,19 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  /* Forzar que haya como máximo 2 chips por fila en el sidebar */
+  align-items: flex-start;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 1 0 auto;
-  /* Permite crecer pero no encogerse por debajo de su contenido */
+  /* Cada chip ocupa entre 40% y 50% del contenedor para garantizar 2 por fila */
+  flex: 1 1 40%;
+  max-width: calc(50% - 3px);
   gap: 6px;
-  padding: 7px 14px;
+  padding: 7px 10px;
   border-radius: 20px;
   font-size: 0.82rem;
   font-weight: 500;
@@ -470,6 +473,8 @@ body {
   user-select: none;
   white-space: nowrap;
   min-height: 34px;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .chip:hover {
