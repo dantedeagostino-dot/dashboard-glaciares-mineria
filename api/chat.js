@@ -1,5 +1,7 @@
 // api/chat.js - Vercel Serverless Function
-// Uses native fetch to call Gemini REST API directly (no SDK dependency issues)
+// Uses same SDK pattern as Open Arg project (@google/generative-ai)
+
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,7 +17,7 @@ module.exports = async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'API key not configured.' });
 
-    const systemText = `Eres ColossusAI, un asistente de inteligencia artificial experto desarrollado por ColossusLab.tech, especializado en el Dashboard de Glaciares & Minería de Argentina.
+    const systemInstruction = `Eres ColossusAI, un asistente de inteligencia artificial experto desarrollado por ColossusLab.tech, especializado en el Dashboard de Glaciares & Minería de Argentina.
 Responde siempre en español argentino. Sé conciso y usa Markdown para estructurar respuestas.
 
 CONTEXTO ACTUAL DEL DASHBOARD:
@@ -27,46 +29,27 @@ CONTEXTO ACTUAL DEL DASHBOARD:
 
 Responde basándote en el contexto y conocimientos de geografía, minería y glaciología. Si algo escapa al dashboard, indicalo cordialmente.`;
 
-    const GEMINI_MODEL = 'gemini-2.0-flash-001';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-
-    const body = {
-        system_instruction: {
-            parts: [{ text: systemText }]
-        },
-        contents: [
-            { role: 'user', parts: [{ text: message }] }
-        ],
-        generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 1024,
-        }
-    };
-
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-2.0-flash',
+            systemInstruction,
+            generationConfig: {
+                temperature: 0.2,
+                maxOutputTokens: 1024,
+            },
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            console.error('Gemini API error:', JSON.stringify(data));
-            return res.status(500).json({ error: `Gemini API error: ${data?.error?.message || 'Unknown'}` });
-        }
-
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) {
-            console.error('Unexpected Gemini response:', JSON.stringify(data));
-            return res.status(500).json({ error: 'No response from AI.' });
-        }
+        const result = await model.generateContent(message);
+        const text = result.response.text();
 
         return res.status(200).json({ text });
 
-    } catch (err) {
-        console.error('Network error calling Gemini:', err.message);
-        return res.status(500).json({ error: 'Network error connecting to AI.' });
+    } catch (error) {
+        console.error('Gemini error:', error?.message || error);
+        return res.status(500).json({
+            error: 'Error al conectar con la IA.',
+            detail: error?.message
+        });
     }
 };
