@@ -27,7 +27,7 @@ CONTEXTO ACTUAL DEL DASHBOARD:
 
 Responde basándote en el contexto y conocimientos de geografía, minería y glaciología. Si algo escapa al dashboard, indicalo cordialmente.`;
 
-    const GEMINI_MODEL = 'gemini-2.0-flash';
+    const GEMINI_MODEL = 'gemini-2.0-flash-001';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
     const body = {
