@@ -46,7 +46,7 @@
             });
         }
 
-        // ── Export conversation ──
+        // ── Export conversation as PDF ──
         const exportBtn = document.getElementById('chatExportBtn');
         if (exportBtn) {
             exportBtn.addEventListener('click', () => {
@@ -55,29 +55,55 @@
                 const state = typeof Filters !== 'undefined' ? Filters.state : {};
                 const now = new Date().toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' });
 
-                let md = `# Informe ColossusAI — Dashboard Glaciares & Minería\n\n`;
-                md += `**Fecha:** ${now}\n`;
-                md += `**Filtros activos:** Provincia: ${state.provincia || 'Todas'} | Radio: ${state.proximityRadius || 25} km\n\n---\n\n`;
+                // Build styled HTML for PDF
+                let html = `
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; padding: 0;">
+                    <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #00d4ff;">
+                        <h1 style="font-size: 20px; margin: 0 0 4px; color: #0a0e1a;">🧠 Informe ColossusAI</h1>
+                        <p style="font-size: 12px; color: #666; margin: 2px 0;">Dashboard Glaciares & Minería Argentina</p>
+                        <p style="font-size: 11px; color: #888; margin: 2px 0;">${now}</p>
+                        <p style="font-size: 11px; color: #888; margin: 2px 0;">Filtros: ${state.provincia || 'Todas'} | Radio: ${state.proximityRadius || 25} km</p>
+                    </div>`;
 
                 conversationHistory.forEach(msg => {
                     if (msg.role === 'user') {
-                        md += `### 👤 Usuario\n${msg.parts[0].text}\n\n`;
+                        html += `
+                        <div style="margin: 12px 0; padding: 10px 14px; background: #e8f4fd; border-left: 3px solid #00a8e8; border-radius: 6px;">
+                            <p style="font-size: 10px; color: #00a8e8; font-weight: 700; margin: 0 0 4px; text-transform: uppercase;">Usuario</p>
+                            <p style="font-size: 13px; margin: 0; color: #1a1a2e;">${msg.parts[0].text}</p>
+                        </div>`;
                     } else {
-                        // Clean chart directives for export
-                        let text = msg.parts[0].text.replace(/\[CHART:[^\]]+\]/g, '_(gráfico generado en chat)_');
-                        md += `### 🧠 ColossusAI\n${text}\n\n---\n\n`;
+                        let text = msg.parts[0].text
+                            .replace(/\[CHART:[^\]]+\]/g, '')
+                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\n/g, '<br>');
+                        html += `
+                        <div style="margin: 12px 0; padding: 10px 14px; background: #f8f9fa; border-left: 3px solid #a78bfa; border-radius: 6px;">
+                            <p style="font-size: 10px; color: #a78bfa; font-weight: 700; margin: 0 0 4px; text-transform: uppercase;">ColossusAI</p>
+                            <div style="font-size: 12px; color: #2d2d44; line-height: 1.6;">${text}</div>
+                        </div>`;
                     }
                 });
 
-                md += `\n_Generado por ColossusAI — ColossusLab.tech_\n`;
+                html += `
+                    <div style="text-align: center; margin-top: 24px; padding-top: 12px; border-top: 1px solid #ddd;">
+                        <p style="font-size: 10px; color: #aaa;">Generado por ColossusAI — ColossusLab.tech</p>
+                    </div>
+                </div>`;
 
-                const blob = new Blob([md], { type: 'text/markdown' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `informe-colossusai-${new Date().toISOString().slice(0, 10)}.md`;
-                a.click();
-                URL.revokeObjectURL(url);
+                const container = document.createElement('div');
+                container.innerHTML = html;
+
+                html2pdf()
+                    .set({
+                        margin: [10, 12],
+                        filename: `informe-colossusai-${new Date().toISOString().slice(0, 10)}.pdf`,
+                        image: { type: 'jpeg', quality: 0.95 },
+                        html2canvas: { scale: 2, useCORS: true },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    })
+                    .from(container)
+                    .save();
             });
         }
 
