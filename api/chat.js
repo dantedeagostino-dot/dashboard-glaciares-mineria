@@ -1,6 +1,15 @@
-import { GoogleGenAI } from '@google/genai';
+const { GoogleGenAI } = require('@google/genai');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -11,45 +20,47 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Message is required' });
     }
 
-    // GEMINI_API_KEY must be stored in Vercel Environment Variables
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-        return res.status(500).json({ error: 'Server configuration error: Gemini API key missing.' });
+        console.error('GEMINI_API_KEY is not set');
+        return res.status(500).json({ error: 'Server configuration error: API key missing.' });
     }
 
     try {
-        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const ai = new GoogleGenAI({ apiKey });
 
-        // Build the system prompt using the dashboard's current context
-        let systemInstruction = `Eres un asistente de inteligencia artificial experto especializado en el Dashboard de Glaciares & Minería de Argentina (Powered by ColossusLab.tech).
-Tu función es responder a las preguntas del usuario sobre los datos analizados.
-Se conciso, amable y profesional. Muestra respuestas bien estructuradas (puedes usar Markdown, viñetas, negritas).
+        const systemInstruction = `Eres ColossusAI, un asistente de inteligencia artificial experto especializado en el Dashboard de Glaciares & Minería de Argentina, desarrollado por ColossusLab.tech.
+Tu función es analizar y responder preguntas sobre los datos del dashboard.
+Sé conciso, amable y profesional. Usa Markdown para estructurar respuestas (viñetas, negritas).
+Responde siempre en español argentino.
 
-CONTEXTO ACTUAL DEL DASHBOARD VERIFICADO POR EL USUARIO:
-- Filtros Activos: ${context.filters}
-- Estadísticas Actuales: ${context.stats}
-- Geoformas Glaciares Visibles: ${context.glaciersCount}
-- Proyectos Mineros Visibles: ${context.miningCount}
-- Resumen Espacial: ${context.alertSummary}
+CONTEXTO ACTUAL DEL DASHBOARD:
+- Filtros Activos: ${context?.filters || 'Ninguno'}
+- Estadísticas: ${context?.stats || 'No disponible'}
+- Glaciares Visibles: ${context?.glaciersCount || 0}
+- Proyectos Mineros Visibles: ${context?.miningCount || 0}
+- Resumen Espacial: ${context?.alertSummary || 'No disponible'}
 
-No debes alucinar. Responde únicamente basándote en la información estadística provista en el contexto y tus conocimientos sobre geografía, minería y glaciología general. Si te preguntan algo que escapa al análisis del dashboard, indicalo cordialmente.`;
+Responde únicamente basándote en el contexto provisto y conocimientos generales de geografía, minería y glaciología. Si algo escapa al dashboard, indicalo cordialmente.`;
 
-        // Make the call to Gemini 2.5 Pro
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
-            contents: message,
+            model: 'gemini-2.5-pro-exp-03-25',
+            contents: [{ role: 'user', parts: [{ text: message }] }],
             config: {
-                systemInstruction: systemInstruction,
-                temperature: 0.2, // Keep responses focused and analytical
+                systemInstruction,
+                temperature: 0.2,
             }
         });
 
-        return res.status(200).json({
-            text: response.text
-        });
+        const text = response.text;
+
+        return res.status(200).json({ text });
 
     } catch (error) {
-        console.error('Gemini API Error:', error);
-        return res.status(500).json({ error: 'Failed to generate response from AI.' });
+        console.error('Gemini API Error:', error?.message || error);
+        return res.status(500).json({
+            error: 'Error al conectar con la IA.',
+            detail: error?.message
+        });
     }
-}
+};
