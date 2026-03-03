@@ -291,10 +291,12 @@ body {
 }
 
 .panel-body {
-  padding: 12px var(--space-md) 14px;
+  padding: 12px var(--space-md) 16px;
+  /* Aumentado padding bottom ligeramente */
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  /* Mayor gap entre elementos */
 }
 
 .panel-body.collapsed {
@@ -1104,14 +1106,18 @@ body {
   }
 
   .chip {
-    padding: 6px 10px;
+    padding: 8px 10px;
+    /* Un poco mas padding vertical */
     font-size: 0.75rem;
     white-space: normal;
     text-align: center;
     justify-content: center;
-    min-height: 32px;
+    min-height: 48px;
+    /* Incrementar altura mínima para texto en 2 líneas */
     flex: 1 1 calc(33.333% - 8px);
     max-width: 100%;
+    align-items: center;
+    /* Asegurar centrado vertical */
   }
 
   /* Etapa de proyecto necesita más ancho porque las palabras son largas */
