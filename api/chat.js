@@ -32,7 +32,7 @@ Responde basándote en el contexto y conocimientos de geografía, minería y gla
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
             systemInstruction,
             generationConfig: {
                 temperature: 0.2,
