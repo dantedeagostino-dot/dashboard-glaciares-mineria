@@ -156,34 +156,79 @@
         if (el) el.remove();
     }
 
-    // ── Context Gathering ──
+    // ── Context Gathering ── Sends full dataset summaries to AI for real analysis ──
     function collectDashboardContext() {
-        // Collect currently active filters safely
         const state = typeof Filters !== 'undefined' ? Filters.state : {};
         const activeProvince = state.provincia || 'Todas';
         const activeRadius = state.proximityRadius || 25;
 
+        // ── 1. Ranking provincial de glaciares por superficie (datos ING 2018) ──
+        let rankingProvincias = '';
+        if (typeof GLACIARES_STATS !== 'undefined') {
+            rankingProvincias = Object.entries(GLACIARES_STATS)
+                .sort((a, b) => b[1].superficie_km2 - a[1].superficie_km2)
+                .map(([prov, s]) => `  • ${prov}: ${s.superficie_km2} km² | ${s.total_geoformas} geoformas | ${s.glaciares} glaciares | ${s.periglacial} periglaciales`)
+                .join('\n');
+        }
+
+        // ── 2. Top 10 glaciares por superficie ──
+        let topGlaciares = '';
+        if (typeof GLACIARES_DATA !== 'undefined') {
+            topGlaciares = [...GLACIARES_DATA]
+                .sort((a, b) => b.superficie_km2 - a.superficie_km2)
+                .slice(0, 10)
+                .map(g => `  • ${g.nombre} (${g.provincia}): ${g.superficie_km2} km² | cuenca: ${g.cuenca} | tipo: ${g.tipo} ${g.subtipo}`)
+                .join('\n');
+        }
+
+        // ── 3. Lista completa de glaciares (nombre, provincia, tipo, cuenca, superficie) ──
+        let todosLosGlaciares = '';
+        if (typeof GLACIARES_DATA !== 'undefined') {
+            todosLosGlaciares = GLACIARES_DATA
+                .map(g => `${g.nombre}|${g.provincia}|${g.tipo}|${g.subtipo}|${g.cuenca}|${g.superficie_km2}km²`)
+                .join('\n');
+        }
+
+        // ── 4. Resumen de minería por mineral ──
+        let resumenMineral = '';
+        if (typeof MINERIA_DATA !== 'undefined') {
+            const mineralMap = {};
+            MINERIA_DATA.forEach(m => {
+                if (!mineralMap[m.mineral]) mineralMap[m.mineral] = { total: 0, estados: {}, provincias: new Set() };
+                mineralMap[m.mineral].total++;
+                mineralMap[m.mineral].estados[m.estado] = (mineralMap[m.mineral].estados[m.estado] || 0) + 1;
+                mineralMap[m.mineral].provincias.add(m.provincia);
+            });
+            resumenMineral = Object.entries(mineralMap)
+                .sort((a, b) => b[1].total - a[1].total)
+                .map(([min, d]) => {
+                    const estados = Object.entries(d.estados).map(([e, c]) => `${c} en ${e}`).join(', ');
+                    return `  • ${min}: ${d.total} proyectos (${estados}) | Provincias: ${[...d.provincias].join(', ')}`;
+                })
+                .join('\n');
+        }
+
+        // ── 5. Lista completa de proyectos mineros ──
+        let todosLosProyectos = '';
+        if (typeof MINERIA_DATA !== 'undefined') {
+            todosLosProyectos = MINERIA_DATA
+                .map(m => `${m.nombre}|${m.empresa}|${m.mineral}|${m.estado}|${m.provincia}`)
+                .join('\n');
+        }
+
+        // ── 6. Filtros activos actuales ──
         const activeTypes = [];
         document.querySelectorAll('#filterTipoGlaciar .chip.active').forEach(c => activeTypes.push(c.dataset.value));
-
         const activeMinerals = [];
         document.querySelectorAll('#filterMineral .chip.active').forEach(c => activeMinerals.push(c.dataset.value));
 
-        const activeStages = [];
-        document.querySelectorAll('#filterEtapa .chip.active').forEach(c => activeStages.push(c.dataset.value));
-
-        // Read UI text content for stats
-        const dText = (id) => {
-            const el = document.getElementById(id);
-            return el ? el.textContent : '0';
-        };
-
         return {
-            filters: `Provincia: ${activeProvince}, Tipos: ${activeTypes.join(', ')}, Minerales: ${activeMinerals.join(', ')}, Etapas: ${activeStages.join(', ')}`,
-            stats: `Superficie: ${dText('statSuperficie')} km², Geoformas totales: ${dText('statTotalGlaciares')}`,
-            glaciersCount: dText('countGlaciares'),
-            miningCount: dText('countMineria'),
-            alertSummary: `${dText('statAlertas')} alertas de proyectos mineros a menos de ${activeRadius} km de glaciares.`
+            filtrosActivos: `Provincia vista: ${activeProvince} | Radio proximidad: ${activeRadius} km | Tipos glaciar: ${activeTypes.join(', ')}`,
+            rankingProvinciasGlaciar: rankingProvincias,
+            topGlaciares,
+            todosLosGlaciares,
+            resumenPorMineral: resumenMineral,
+            todosLosProyectos,
         };
     }
 
