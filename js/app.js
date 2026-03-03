@@ -417,4 +417,33 @@
     </div>`;
     }
 
+    // ── Mobile Navigation ──────────────────────────
+    window.switchMobileView = function (btn) {
+        // Update active class on buttons
+        const navButtons = document.querySelectorAll('.mobile-nav .nav-btn');
+        if (!navButtons.length) return; // Not in mobile view
+
+        navButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Get target view ID
+        const targetViewId = btn.getAttribute('data-view');
+
+        // Hide all views
+        document.getElementById('mapView').classList.remove('mobile-active');
+        document.getElementById('sidebarView').classList.remove('mobile-active');
+        document.getElementById('panelsView').classList.remove('mobile-active');
+
+        // Show target view
+        document.getElementById(targetViewId).classList.add('mobile-active');
+
+        // Fix map rendering issues when unhiding
+        if (targetViewId === 'mapView' && typeof map !== 'undefined') {
+            setTimeout(() => map.invalidateSize(), 300);
+        }
+
+        // Window resize event helps Chart.js redraw properly
+        window.dispatchEvent(new Event('resize'));
+    };
+
 })();

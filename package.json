@@ -1,0 +1,12 @@
+{
+  "name": "dashboard-glaciares-mineria",
+  "version": "1.0.0",
+  "description": "Dashboard para el análisis de glaciares y proyectos mineros en Argentina",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@google/genai": "^0.1.2"
+  },
+  "license": "MIT"
+}
