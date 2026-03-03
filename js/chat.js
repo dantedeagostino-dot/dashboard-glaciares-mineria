@@ -30,6 +30,22 @@
             chatWindow.classList.remove('active');
         });
 
+        // Suggestion chips - fill input on click, hide when typing
+        const suggestions = document.getElementById('chatSuggestions');
+        if (suggestions) {
+            suggestions.querySelectorAll('.suggestion-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    // strip leading emoji
+                    chatInput.value = chip.innerText.replace(/^\S+\s/, '');
+                    chatInput.focus();
+                    suggestions.style.display = 'none';
+                });
+            });
+            chatInput.addEventListener('input', () => {
+                suggestions.style.display = chatInput.value.length > 0 ? 'none' : 'flex';
+            });
+        }
+
         // Handle form submission
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
