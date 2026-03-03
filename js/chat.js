@@ -1,41 +1,56 @@
 /**
- * Chat Interface Module for Gemini AI Integration
+ * Chat Interface Module — ColossusAI
+ * v2.0: Conversation memory · Full markdown · Auto-retry · Clear button
  */
 
 (function () {
     'use strict';
+
+    // ── Conversation history (in-memory, max 20 turns) ──────────
+    const MAX_HISTORY = 20;
+    let conversationHistory = [];
 
     document.addEventListener('DOMContentLoaded', () => {
         initChatUI();
     });
 
     function initChatUI() {
-        // Toggle chat window
         const toggleBtn = document.getElementById('chatToggleBtn');
         const closeBtn = document.getElementById('chatCloseBtn');
+        const clearBtn = document.getElementById('chatClearBtn');
         const chatWindow = document.getElementById('chatWindow');
         const chatForm = document.getElementById('chatForm');
         const chatInput = document.getElementById('chatInput');
 
         if (!toggleBtn || !chatWindow) return;
 
+        // ── Toggle open/close ──
         toggleBtn.addEventListener('click', () => {
             chatWindow.classList.toggle('active');
-            if (chatWindow.classList.contains('active')) {
+            if (chatWindow.classList.contains('active')) chatInput.focus();
+        });
+        closeBtn.addEventListener('click', () => chatWindow.classList.remove('active'));
+
+        // ── Clear conversation ──
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                conversationHistory = [];
+                const chatMessages = document.getElementById('chatMessages');
+                // Remove all bubbles except the welcome message (first child)
+                const bubbles = chatMessages.querySelectorAll('.chat-bubble');
+                bubbles.forEach(b => b.remove());
+                // Re-show suggestion chips
+                const suggestions = document.getElementById('chatSuggestions');
+                if (suggestions) suggestions.style.display = 'flex';
                 chatInput.focus();
-            }
-        });
+            });
+        }
 
-        closeBtn.addEventListener('click', () => {
-            chatWindow.classList.remove('active');
-        });
-
-        // Suggestion chips - fill input on click, hide when typing
+        // ── Suggestion chips ──
         const suggestions = document.getElementById('chatSuggestions');
         if (suggestions) {
             suggestions.querySelectorAll('.suggestion-chip').forEach(chip => {
                 chip.addEventListener('click', () => {
-                    // strip leading emoji
                     chatInput.value = chip.innerText.replace(/^\S+\s/, '');
                     chatInput.focus();
                     suggestions.style.display = 'none';
@@ -46,85 +61,194 @@
             });
         }
 
-        // Handle form submission
+        // ── Submit ──
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const message = chatInput.value.trim();
             if (!message) return;
 
-            // Clear input and add user message
             chatInput.value = '';
+            if (suggestions) suggestions.style.display = 'none';
             appendMessage('user', message);
 
-            // Show typing indicator
+            // Add to history immediately
+            conversationHistory.push({ role: 'user', content: message });
+
             const typingId = showTypingIndicator();
+            const context = collectDashboardContext();
 
-            try {
-                // Collect context from dashboard
-                const context = collectDashboardContext();
+            // Try up to 2 times on failure
+            let lastError = null;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message,
+                            context,
+                            history: conversationHistory.slice(0, -1) // exclude current
+                        })
+                    });
 
-                // Send to backend
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message, context })
-                });
+                    removeTypingIndicator(typingId);
 
-                removeTypingIndicator(typingId);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-                if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status}`);
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+
+                    const aiText = data.text;
+                    appendMessage('ai', formatMarkdown(aiText));
+
+                    // Save AI turn
+                    conversationHistory.push({ role: 'model', content: aiText });
+
+                    // Trim history to max
+                    if (conversationHistory.length > MAX_HISTORY) {
+                        conversationHistory = conversationHistory.slice(-MAX_HISTORY);
+                    }
+                    return; // success
+
+                } catch (err) {
+                    lastError = err;
+                    if (attempt === 0) {
+                        // Wait 1.5s then retry silently
+                        await new Promise(r => setTimeout(r, 1500));
+                    }
                 }
-
-                const data = await response.json();
-
-                if (data.error) {
-                    appendMessage('error', 'Error del servidor: ' + data.error);
-                } else if (data.text) {
-                    appendMessage('ai', formatMarkdown(data.text));
-                } else {
-                    appendMessage('error', 'Respuesta inesperada del servidor.');
-                }
-            } catch (err) {
-                removeTypingIndicator(typingId);
-                console.error('Chat error:', err);
-                appendMessage('error', 'No se pudo conectar con la Inteligencia Artificial. Por favor intenta más tarde.');
             }
+
+            // Both attempts failed
+            removeTypingIndicator(typingId);
+            // Remove the user turn from history since we couldn't get a response
+            conversationHistory.pop();
+            console.error('Chat error:', lastError);
+            appendMessage('error', 'No se pudo conectar con ColossusAI. Por favor intentá de nuevo en unos segundos.');
         });
     }
 
-    // ── Helper: Format basic markdown (bold, lists) ──
+    // ── Full Markdown renderer ─────────────────────────────────
     function formatMarkdown(text) {
-        // Very simple markdown parser for bold and asterisks
-        let html = text
-            // Replace bold
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            // Add paragraphs
-            .split('\n')
-            .map(line => {
-                line = line.trim();
-                if (line.startsWith('* ')) {
-                    return `<li>${line.substring(2)}</li>`;
-                }
-                return line ? `<p>${line}</p>` : '';
-            })
-            .join('');
+        // Escape HTML entities first
+        const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-        // Wrap logic for lists
-        html = html.replace(/(<li>.*?<\/li>)+/g, match => `<ul>${match}</ul>`);
+        let lines = text.split('\n');
+        let html = '';
+        let i = 0;
+
+        while (i < lines.length) {
+            const raw = lines[i];
+            const line = raw.trim();
+
+            // ── Headings ──
+            if (/^### /.test(line)) {
+                html += `<h4>${inlineMarkdown(line.slice(4))}</h4>`;
+                i++; continue;
+            }
+            if (/^## /.test(line)) {
+                html += `<h3>${inlineMarkdown(line.slice(3))}</h3>`;
+                i++; continue;
+            }
+            if (/^# /.test(line)) {
+                html += `<h2>${inlineMarkdown(line.slice(2))}</h2>`;
+                i++; continue;
+            }
+
+            // ── Horizontal rule ──
+            if (/^---+$/.test(line)) {
+                html += '<hr>';
+                i++; continue;
+            }
+
+            // ── Table detection (line starts with |) ──
+            if (/^\|/.test(line)) {
+                const tableLines = [];
+                while (i < lines.length && /^\|/.test(lines[i].trim())) {
+                    tableLines.push(lines[i].trim());
+                    i++;
+                }
+                html += renderTable(tableLines);
+                continue;
+            }
+
+            // ── Unordered list ──
+            if (/^[-*•] /.test(line)) {
+                html += '<ul>';
+                while (i < lines.length && /^[-*•] /.test(lines[i].trim())) {
+                    html += `<li>${inlineMarkdown(lines[i].trim().slice(2))}</li>`;
+                    i++;
+                }
+                html += '</ul>';
+                continue;
+            }
+
+            // ── Ordered list ──
+            if (/^\d+\. /.test(line)) {
+                html += '<ol>';
+                while (i < lines.length && /^\d+\. /.test(lines[i].trim())) {
+                    html += `<li>${inlineMarkdown(lines[i].trim().replace(/^\d+\. /, ''))}</li>`;
+                    i++;
+                }
+                html += '</ol>';
+                continue;
+            }
+
+            // ── Empty line → paragraph break ──
+            if (!line) { html += '<br>'; i++; continue; }
+
+            // ── Normal paragraph ──
+            html += `<p>${inlineMarkdown(line)}</p>`;
+            i++;
+        }
+
         return html;
     }
 
-    // ── Helper: Append message to chat ──
+    function inlineMarkdown(text) {
+        return text
+            .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/`(.+?)`/g, '<code>$1</code>')
+            .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    }
+
+    function renderTable(lines) {
+        if (lines.length < 2) return lines.map(l => `<p>${l}</p>`).join('');
+        const parseRow = row => row.split('|').filter((_, i, a) => i > 0 && i < a.length - 1).map(c => c.trim());
+        const headers = parseRow(lines[0]);
+        const isAlignRow = line => /^\|[\s:-]+\|/.test(line);
+        const body = lines.slice(isAlignRow(lines[1]) ? 2 : 1);
+
+        let t = '<div class="ai-table-wrap"><table class="ai-table"><thead><tr>';
+        t += headers.map(h => `<th>${inlineMarkdown(h)}</th>`).join('');
+        t += '</tr></thead><tbody>';
+        body.forEach(row => {
+            const cells = parseRow(row);
+            if (cells.length) {
+                t += '<tr>' + cells.map(c => `<td>${inlineMarkdown(c)}</td>`).join('') + '</tr>';
+            }
+        });
+        t += '</tbody></table></div>';
+        return t;
+    }
+
+    // ── Append message ──────────────────────────────────────────
     function appendMessage(sender, content) {
         const chatMessages = document.getElementById('chatMessages');
         const msgDiv = document.createElement('div');
         msgDiv.className = `chat-bubble ${sender}`;
 
-        if (sender === 'ai' || sender === 'error') {
+        if (sender === 'ai') {
             msgDiv.innerHTML = `
-                <div class="bubble-icon"><i class="fa-solid ${sender === 'error' ? 'fa-triangle-exclamation' : 'fa-brain'}"></i></div>
+                <div class="bubble-icon"><i class="fa-solid fa-brain"></i></div>
                 <div class="bubble-text">${content}</div>
+            `;
+        } else if (sender === 'error') {
+            msgDiv.innerHTML = `
+                <div class="bubble-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="bubble-text"><p>${content}</p></div>
             `;
         } else {
             msgDiv.innerHTML = `<div class="bubble-text">${content}</div>`;
@@ -156,13 +280,13 @@
         if (el) el.remove();
     }
 
-    // ── Context Gathering ── Sends full dataset summaries to AI for real analysis ──
+    // ── Context Gathering ───────────────────────────────────────
     function collectDashboardContext() {
         const state = typeof Filters !== 'undefined' ? Filters.state : {};
         const activeProvince = state.provincia || 'Todas';
         const activeRadius = state.proximityRadius || 25;
 
-        // ── 1. Ranking provincial de glaciares por superficie (datos ING 2018) ──
+        // 1. Ranking provincial glaciares
         let rankingProvincias = '';
         if (typeof GLACIARES_STATS !== 'undefined') {
             rankingProvincias = Object.entries(GLACIARES_STATS)
@@ -171,7 +295,7 @@
                 .join('\n');
         }
 
-        // ── 2. Top 10 glaciares por superficie ──
+        // 2. Top 10 glaciares
         let topGlaciares = '';
         if (typeof GLACIARES_DATA !== 'undefined') {
             topGlaciares = [...GLACIARES_DATA]
@@ -181,7 +305,7 @@
                 .join('\n');
         }
 
-        // ── 3. Lista completa de glaciares (nombre, provincia, tipo, cuenca, superficie) ──
+        // 3. Todos los glaciares
         let todosLosGlaciares = '';
         if (typeof GLACIARES_DATA !== 'undefined') {
             todosLosGlaciares = GLACIARES_DATA
@@ -189,7 +313,7 @@
                 .join('\n');
         }
 
-        // ── 4. Resumen de minería por mineral ──
+        // 4. Resumen minería por mineral
         let resumenMineral = '';
         if (typeof MINERIA_DATA !== 'undefined') {
             const mineralMap = {};
@@ -208,7 +332,7 @@
                 .join('\n');
         }
 
-        // ── 5. Lista completa de proyectos mineros ──
+        // 5. Todos los proyectos
         let todosLosProyectos = '';
         if (typeof MINERIA_DATA !== 'undefined') {
             todosLosProyectos = MINERIA_DATA
@@ -216,36 +340,19 @@
                 .join('\n');
         }
 
-        // ── 6. Filtros activos actuales ──
+        // 6. Filtros activos
         const activeTypes = [];
         document.querySelectorAll('#filterTipoGlaciar .chip.active').forEach(c => activeTypes.push(c.dataset.value));
         const activeMinerals = [];
         document.querySelectorAll('#filterMineral .chip.active').forEach(c => activeMinerals.push(c.dataset.value));
 
-        // ── 9. ESG: EITI, TSM, empleo (data/esg.js) ──
-        let esgContextData = '';
-        if (typeof ESG_DATA !== 'undefined') {
-            const tsm = typeof TSM_INFO !== 'undefined' ? TSM_INFO : {};
-            const tot = typeof ESG_TOTALES !== 'undefined' ? ESG_TOTALES : {};
-            esgContextData = [
-                `TSM en Argentina: adoptado por CAEM en ${tsm.año_adopcion || 2016} | primera certificada: ${tsm.primera_mina_certificada || 'Veladero'} (${tsm.año_primera_certificacion || 2023})`,
-                `Total regalías sector minero: ~USD ${((tot.regalias_provinciales_total_usd || 0) / 1e6).toFixed(0)}M/año | Empleo directo: ${(tot.empleo_directo_total || 0).toLocaleString()} trabajadores | Mujeres: ${tot.porcentaje_mujeres_sector_pct || 11}%`,
-                `Proyectos con reporte GRI: ${tot.proyectos_con_gri || 8} | Proyectos en TSM: ${tot.proyectos_en_tsm || 28} | Certificados: ${tot.proyectos_tsm_certificados || 1}`,
-                ESG_DATA.map(e => `${e.proyecto}|${e.empresa}|${e.provincia}|Regalías USD ${((e.regalias_provinciales_usd || 0)/1e6).toFixed(1)}M|Empleo ${e.empleo_directo}|Mujeres ${e.porcentaje_mujeres_pct}%|TSM:${e.tsm_status}`).join('\n'),
-            ].join('\n');
+        // 7. Retracción ING 2024
+        let retraccionData = '';
+        if (typeof GLACIARES_RETRACCION !== 'undefined') {
+            retraccionData = `Resolución 142/2024 (NOA 2008–2023): −${GLACIARES_RETRACCION.reduccion_hielo_descubierto_pct}% hielo descubierto | −${GLACIARES_RETRACCION.reduccion_manchones_nieve_pct}% manchones de nieve | ${GLACIARES_RETRACCION.subcuencas_actualizadas} subcuencas actualizadas`;
         }
 
-        // ── 10. Cadena de suministros: CAPMIN ──
-        let capminContextData = '';
-        if (typeof CAPMIN_DATA !== 'undefined') {
-            const info = typeof CAPMIN_INFO !== 'undefined' ? CAPMIN_INFO : {};
-            capminContextData = [
-                `CAPMIN: ${info.socios_aprox || 180}+ empresas proveedoras. PyMEs: ~${info.pymes_en_directorio_pct || 65}% del directorio`,
-                CAPMIN_DATA.map(c => `${c.nombre}|${c.rubro}|${c.productos}|Provincias: ${Array.isArray(c.provincias_activas) ? c.provincias_activas.join(', ') : c.provincias_activas}|${c.pyme ? 'PyME' : 'Gran empresa'}`).join('\n'),
-            ].join('\n');
-        }
-
-        // ── 8. Datos especializados de litio (data/litio.js) ──
+        // 8. Litio
         let litioContextData = '';
         if (typeof LITIO_DATA !== 'undefined') {
             const enProd = LITIO_DATA.filter(l => l.estado === 'Producción');
@@ -257,22 +364,38 @@
                 : '';
             litioContextData = [
                 `Argentina: 2° en reservas mundiales (${ctx.reservas_argentina_mt || 20} Mt LCE, ${ctx.reservas_mundo_pct || 22}% global)`,
-                `Proyectos en producción: ${enProd.map(l => `${l.nombre} (${l.capacidad_tpa?.toLocaleString()} t/año)`).join(', ')}`,
-                `Proyectos en construcción: ${enCons.map(l => `${l.nombre} (${l.empresa}) → ${l.capacidad_tpa?.toLocaleString()} t/año`).join(', ')}`,
-                `Capacidad total proyectada: ${totalCap.toLocaleString()} t/año de carbonato de litio`,
-                `Proyecciones de producción nacional: ${proy}`,
+                `En producción: ${enProd.map(l => `${l.nombre} (${l.capacidad_tpa?.toLocaleString()} t/año)`).join(', ')}`,
+                `En construcción: ${enCons.map(l => `${l.nombre} → ${l.capacidad_tpa?.toLocaleString()} t/año`).join(', ')}`,
+                `Capacidad total proyectada: ${totalCap.toLocaleString()} t/año`,
+                `Proyecciones: ${proy}`,
                 LITIO_DATA.map(l => `${l.nombre}|${l.provincia}|${l.tipo_yacimiento}|${l.compuesto}|${l.estado}|${l.capacidad_tpa || 'N/D'} t/año|${l.reservas_mt} Mt LCE`).join('\n'),
             ].join('\n');
         }
 
-        // ── 7. Datos de retracción ING 2024 (Resolución 142/2024) ──
-        let retraccionData = '';
-        if (typeof GLACIARES_RETRACCION !== 'undefined') {
-            retraccionData = `Resolución 142/2024 (NOA 2008–2023): −${GLACIARES_RETRACCION.reduccion_hielo_descubierto_pct}% hielo descubierto | −${GLACIARES_RETRACCION.reduccion_manchones_nieve_pct}% manchones de nieve | ${GLACIARES_RETRACCION.subcuencas_actualizadas} subcuencas actualizadas (22 en NOA/Cuyo)`;
+        // 9. ESG
+        let esgContextData = '';
+        if (typeof ESG_DATA !== 'undefined') {
+            const tsm = typeof TSM_INFO !== 'undefined' ? TSM_INFO : {};
+            const tot = typeof ESG_TOTALES !== 'undefined' ? ESG_TOTALES : {};
+            esgContextData = [
+                `TSM en Argentina: adoptado por CAEM en ${tsm.año_adopcion || 2016} | 1ra certificada: ${tsm.primera_mina_certificada || 'Veladero'} (${tsm.año_primera_certificacion || 2023})`,
+                `Regalías: ~USD ${((tot.regalias_provinciales_total_usd || 0) / 1e6).toFixed(0)}M/año | Empleo directo: ${(tot.empleo_directo_total || 0).toLocaleString()} | Mujeres: ${tot.porcentaje_mujeres_sector_pct || 11}%`,
+                ESG_DATA.map(e => `${e.proyecto}|${e.empresa}|${e.provincia}|USD ${((e.regalias_provinciales_usd || 0) / 1e6).toFixed(1)}M|${e.empleo_directo} empleados|${e.porcentaje_mujeres_pct}% mujeres|TSM:${e.tsm_status}`).join('\n'),
+            ].join('\n');
+        }
+
+        // 10. CAPMIN
+        let capminContextData = '';
+        if (typeof CAPMIN_DATA !== 'undefined') {
+            const info = typeof CAPMIN_INFO !== 'undefined' ? CAPMIN_INFO : {};
+            capminContextData = [
+                `CAPMIN: ${info.socios_aprox || 180}+ empresas | ~${info.pymes_en_directorio_pct || 65}% PyMEs`,
+                CAPMIN_DATA.map(c => `${c.nombre}|${c.rubro}|${Array.isArray(c.provincias_activas) ? c.provincias_activas.join(', ') : c.provincias_activas}|${c.pyme ? 'PyME' : 'Gran empresa'}`).join('\n'),
+            ].join('\n');
         }
 
         return {
-            filtrosActivos: `Provincia vista: ${activeProvince} | Radio proximidad: ${activeRadius} km | Tipos glaciar: ${activeTypes.join(', ')}`,
+            filtrosActivos: `Provincia: ${activeProvince} | Radio: ${activeRadius} km | Tipos: ${activeTypes.join(', ')}`,
             rankingProvinciasGlaciar: rankingProvincias,
             topGlaciares,
             todosLosGlaciares,

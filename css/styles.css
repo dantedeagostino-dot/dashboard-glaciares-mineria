@@ -1632,3 +1632,31 @@ body {
     padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   }
 }
+/* ───── Chat clear + AI markdown styles (injected) ───── */
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.chat-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 8px;
+  opacity: 0.6;
+  transition: color 0.15s, opacity 0.15s;
+}
+.chat-clear:hover { color: #e74c3c; opacity: 1; }
+.ai-table-wrap { overflow-x: auto; margin: 8px 0; border-radius: 6px; }
+.ai-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.ai-table th { background: rgba(0,212,255,0.12); color: var(--glacier-primary); padding: 6px 10px; text-align: left; font-weight: 600; border-bottom: 1px solid rgba(0,212,255,0.25); white-space: nowrap; }
+.ai-table td { padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); line-height: 1.4; }
+.ai-table tr:last-child td { border-bottom: none; }
+.ai-table tr:hover td { background: rgba(255,255,255,0.03); }
+.bubble-text h2 { font-size: 1rem; color: var(--glacier-primary); margin: 8px 0 4px; }
+.bubble-text h3 { font-size: 0.95rem; color: var(--glacier-primary); margin: 6px 0 3px; }
+.bubble-text h4 { font-size: 0.9rem; font-weight: 600; margin: 5px 0 2px; }
+.bubble-text hr  { border-color: rgba(255,255,255,0.1); margin: 8px 0; }
+.bubble-text code { background: rgba(0,212,255,0.1); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 0.85em; }

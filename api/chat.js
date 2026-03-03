@@ -1,6 +1,5 @@
 // api/chat.js - Vercel Serverless Function
-// Uses same SDK pattern as Open Arg project (@google/generative-ai)
-
+// ColossusAI — with conversation memory + streaming support
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 module.exports = async function handler(req, res) {
@@ -11,7 +10,7 @@ module.exports = async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    const { message, context } = req.body;
+    const { message, context, history = [] } = req.body;
     if (!message) return res.status(400).json({ error: 'Message is required' });
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -21,7 +20,7 @@ module.exports = async function handler(req, res) {
 Estás integrado en el Dashboard de Glaciares & Minería de Argentina.
 Responde siempre en español argentino rioplatense. Sé directo y usa Markdown para estructurar respuestas.
 
-Tu tarea es analizar y responder preguntas basándote DIRECTAMENTE en los datos de las bases de datos que se te proporcionan a continuación. NO digas que "el dashboard no especifica" ni que "necesitaría más información": los datos ESTÁN en este contexto, úsalos.
+Tu tarea es analizar y responder preguntas basándote DIRECTAMENTE en los datos de las bases de datos que se te proporcionan. NO digas que "el dashboard no especifica" ni que "necesitaría más información": los datos ESTÁN en este contexto, úsalos.
 
 ═══════════════════════════════════════════
 BASE DE DATOS 1: GLACIARES (ING - IANIGLA/CONICET)
@@ -63,7 +62,7 @@ ${context?.esgIndicadores || 'TSM adoptado por CAEM en 2016. Veladero: primera m
 
 ═══════════════════════════════════════════
 CADENA DE SUMINISTROS — DIRECTORIO CAPMIN:
-${context?.cadenaSuministros || 'CAPMIN: 180+ empresas proveedoras. ~65% son PyMEs. Rubros: explosivos, equipos, labortatorio, transporte, ambiental, tecnología, energía.'}
+${context?.cadenaSuministros || 'CAPMIN: 180+ empresas proveedoras. ~65% son PyMEs. Rubros: explosivos, equipos, laboratorio, transporte, ambiental, tecnología, energía.'}
 ═══════════════════════════════════════════
 
 ═══════════════════════════════════════════
@@ -72,13 +71,11 @@ ${context?.filtrosActivos || 'Sin filtros'}
 ═══════════════════════════════════════════
 
 INSTRUCCIONES:
-- Usa los datos anteriores para responder con precisión y números reales.
-- Si te preguntan por rankings (más grande, más chico, más cerca), calculá la respuesta desde los datos.
-- Si te preguntan por glaciares de una provincia o cuenca específica, filtrá el registro completo.
-- Si te preguntan por proyectos de un mineral o etapa, filtrá la lista de proyectos.
-- Para preguntas de proximidad (minería cerca de glaciares), razoná con las provincias y cuencas compartidas.
-- Para preguntas sobre retracción o cambio climático en glaciares, usá los datos de la Resolución 142/2024.
-- Podés hacer análisis combinados (ej: qué glaciares de la cuenca del Río Mendoza tienen proyectos mineros cercanos).`;
+- Usá los datos anteriores para responder con precisión y números reales.
+- Hacé análisis comparativos y rankings cuando sea útil (tablas Markdown si hay más de 3 items).
+- Si tenés historial de conversación, considerá el contexto previo para dar respuestas coherentes.
+- Para preguntas de retracción o cambio climático, usá los datos de la Resolución 142/2024.
+- Podés hacer análisis combinados (glaciares + minería + ESG + litio + proveedores).`;
 
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
@@ -87,11 +84,21 @@ INSTRUCCIONES:
             systemInstruction,
             generationConfig: {
                 temperature: 0.1,
-                maxOutputTokens: 1500,
+                maxOutputTokens: 1800,
             },
         });
 
-        const result = await model.generateContent(message);
+        // Build history in Gemini format (max last 10 turns = 20 messages)
+        const geminiHistory = history
+            .slice(-20)
+            .map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }],
+            }));
+
+        // Start chat session with history
+        const chat = model.startChat({ history: geminiHistory });
+        const result = await chat.sendMessage(message);
         const text = result.response.text();
 
         return res.status(200).json({ text });
