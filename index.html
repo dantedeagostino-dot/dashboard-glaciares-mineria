@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="es">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description"
-    content="Dashboard interactivo para el análisis de glaciares y proyectos mineros en Argentina. Inventario Nacional de Glaciares + Cartera SIACAM.">
-  <title>Glaciares & Minería — Dashboard Argentina</title>
+    content="Dashboard interactivo para el anÃ¡lisis de glaciares y proyectos mineros en Argentina. Inventario Nacional de Glaciares + Cartera SIACAM.">
+  <title>Glaciares & MinerÃ­a â€” Dashboard Argentina</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -34,8 +34,8 @@
             <i class="fa-solid fa-mountain-sun icon"></i>
           </div>
           <div>
-            <h1>Glaciares & Minería</h1>
-            <div class="subtitle">República Argentina — Análisis Espacial · Powered by <a
+            <h1>Glaciares & MinerÃ­a</h1>
+            <div class="subtitle">RepÃºblica Argentina â€” AnÃ¡lisis Espacial Â· Powered by <a
                 href="https://colossuslab.tech" target="_blank" rel="noopener"
                 style="color: var(--glacier-primary); text-decoration: none; font-weight: 600;">ColossusLab.tech</a>
             </div>
@@ -50,7 +50,7 @@
         </div>
         <div class="header-stat info">
           <span class="stat-value" id="statSuperficie">8,484</span>
-          <span class="stat-label">km² Glaciares</span>
+          <span class="stat-label">kmÂ² Glaciares</span>
         </div>
         <div class="header-stat mining">
           <span class="stat-value" id="statProyectos">82</span>
@@ -78,7 +78,7 @@
             <span class="toggle-switch"></span>
             <div class="layer-info">
               <span class="layer-name">Glaciares</span>
-              <span class="layer-count" id="countGlaciares">— puntos</span>
+              <span class="layer-count" id="countGlaciares">â€” puntos</span>
             </div>
           </label>
           <label class="layer-toggle periglacial">
@@ -86,7 +86,7 @@
             <span class="toggle-switch"></span>
             <div class="layer-info">
               <span class="layer-name">Ambiente Periglacial</span>
-              <span class="layer-count" id="countPeriglacial">— puntos</span>
+              <span class="layer-count" id="countPeriglacial">â€” puntos</span>
             </div>
           </label>
           <label class="layer-toggle mining">
@@ -94,7 +94,7 @@
             <span class="toggle-switch"></span>
             <div class="layer-info">
               <span class="layer-name">Proyectos Mineros</span>
-              <span class="layer-count" id="countMineria">— proyectos</span>
+              <span class="layer-count" id="countMineria">â€” proyectos</span>
             </div>
           </label>
           <label class="layer-toggle alerts">
@@ -105,11 +105,11 @@
               <span class="layer-count" id="countAlertas">radio configurable</span>
             </div>
           </label>
-          <!-- SIGAM — SEGEMAR Geological Layer -->
-          <label class="layer-toggle sigam-toggle" title="Unidades geológicas SEGEMAR (SIGAM WMS)">
+          <!-- SIGAM â€” SEGEMAR Geological Layer -->
+          <label class="layer-toggle sigam-toggle" title="Unidades geolÃ³gicas SEGEMAR (SIGAM WMS)">
             <input type="checkbox" id="layerSegemar">
             <span class="toggle-track"></span>
-            <span class="toggle-label">?? Geología SIGAM</span>
+            <span class="toggle-label">?? GeologÃ­a SIGAM</span>
           </label>
         </div>
       </div>
@@ -126,13 +126,13 @@
               <option value="">Todas las provincias</option>
               <option value="Jujuy">Jujuy</option>
               <option value="Salta">Salta</option>
-              <option value="Tucumán">Tucumán</option>
+              <option value="TucumÃ¡n">TucumÃ¡n</option>
               <option value="Catamarca">Catamarca</option>
               <option value="La Rioja">La Rioja</option>
               <option value="San Juan">San Juan</option>
               <option value="Mendoza">Mendoza</option>
-              <option value="Neuquén">Neuquén</option>
-              <option value="Río Negro">Río Negro</option>
+              <option value="NeuquÃ©n">NeuquÃ©n</option>
+              <option value="RÃ­o Negro">RÃ­o Negro</option>
               <option value="Chubut">Chubut</option>
               <option value="Santa Cruz">Santa Cruz</option>
               <option value="Tierra del Fuego">Tierra del Fuego</option>
@@ -157,11 +157,11 @@
             </div>
           </div>
           <div class="filter-group" style="margin-top: 8px;">
-            <label>Superficie mínima (km²)</label>
+            <label>Superficie mÃ­nima (kmÂ²)</label>
             <div class="range-container">
               <input type="range" id="filterSuperficie" min="0" max="100" value="0" step="0.1"
                 oninput="updateRangeLabel(this)">
-              <div class="range-value" id="filterSuperficieLabel">= 0 km²</div>
+              <div class="range-value" id="filterSuperficieLabel">= 0 kmÂ²</div>
             </div>
           </div>
         </div>
@@ -199,8 +199,8 @@
             <div class="chip active" data-value="Plomo" onclick="toggleChip(this)">
               <i class="fa-solid fa-circle" style="color: #7f8c8d; font-size:6px"></i> Plomo
             </div>
-            <div class="chip active" data-value="Carbón" onclick="toggleChip(this)">
-              <i class="fa-solid fa-circle" style="color: #2c3e50; font-size:6px"></i> Carbón
+            <div class="chip active" data-value="CarbÃ³n" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #2c3e50; font-size:6px"></i> CarbÃ³n
             </div>
           </div>
         </div>
@@ -214,12 +214,12 @@
         </div>
         <div class="panel-body">
           <div class="checkbox-group" id="filterEtapa">
-            <div class="chip active" data-value="Producción" onclick="toggleChip(this)">Producción</div>
-            <div class="chip active" data-value="Construcción" onclick="toggleChip(this)">Construcción</div>
+            <div class="chip active" data-value="ProducciÃ³n" onclick="toggleChip(this)">ProducciÃ³n</div>
+            <div class="chip active" data-value="ConstrucciÃ³n" onclick="toggleChip(this)">ConstrucciÃ³n</div>
             <div class="chip active" data-value="Factibilidad" onclick="toggleChip(this)">Factibilidad</div>
             <div class="chip active" data-value="Prefactibilidad" onclick="toggleChip(this)">Prefactibilidad</div>
-            <div class="chip active" data-value="Exploración avanzada" onclick="toggleChip(this)">Exploración</div>
-            <div class="chip active" data-value="Evaluación económica preliminar" onclick="toggleChip(this)">Evaluación
+            <div class="chip active" data-value="ExploraciÃ³n avanzada" onclick="toggleChip(this)">ExploraciÃ³n</div>
+            <div class="chip active" data-value="EvaluaciÃ³n econÃ³mica preliminar" onclick="toggleChip(this)">EvaluaciÃ³n
             </div>
             <div class="chip active" data-value="Mantenimiento" onclick="toggleChip(this)">Mantenimiento</div>
           </div>
@@ -255,14 +255,14 @@
 
       <!-- Province Info Bar -->
       <div class="province-info-bar hidden" id="provinceInfoBar">
-        <span class="province-name" id="provinceInfoName">—</span>
+        <span class="province-name" id="provinceInfoName">â€”</span>
         <div class="province-stat">
           <span class="value" id="provinceInfoGlaciares" style="color: var(--glacier-primary)">0</span>
           <span class="label">Geoformas</span>
         </div>
         <div class="province-stat">
           <span class="value" id="provinceInfoSuperficie" style="color: var(--info)">0</span>
-          <span class="label">km²</span>
+          <span class="label">kmÂ²</span>
         </div>
         <div class="province-stat">
           <span class="value" id="provinceInfoMineria" style="color: var(--mining-primary)">0</span>
@@ -282,7 +282,7 @@
       <!-- Tab Navigation -->
       <div class="tab-bar">
         <button class="tab-btn active" data-tab="tab-overview" onclick="switchTab(this)">Resumen</button>
-        <button class="tab-btn" data-tab="tab-analysis" onclick="switchTab(this)">Análisis</button>
+        <button class="tab-btn" data-tab="tab-analysis" onclick="switchTab(this)">AnÃ¡lisis</button>
         <button class="tab-btn" data-tab="tab-minerals" onclick="switchTab(this)">Minerales</button>
         <button class="tab-btn" data-tab="tab-esg" onclick="switchTab(this)">?? Sostenibilidad</button>
       </div>
@@ -292,24 +292,24 @@
         <!-- Key Metrics -->
         <div class="metric-grid">
           <div class="metric-card glacier">
-            <span class="metric-value" id="metricGlaciaresTotal">—</span>
+            <span class="metric-value" id="metricGlaciaresTotal">â€”</span>
             <span class="metric-label">Glaciares</span>
           </div>
           <div class="metric-card periglacial">
-            <span class="metric-value" id="metricPeriglacialTotal">—</span>
+            <span class="metric-value" id="metricPeriglacialTotal">â€”</span>
             <span class="metric-label">Amb. Periglacial</span>
           </div>
           <div class="metric-card mining">
-            <span class="metric-value" id="metricMineriaTotal">—</span>
+            <span class="metric-value" id="metricMineriaTotal">â€”</span>
             <span class="metric-label">Proy. Mineros</span>
           </div>
           <div class="metric-card danger">
-            <span class="metric-value" id="metricAlertasTotal">—</span>
+            <span class="metric-value" id="metricAlertasTotal">â€”</span>
             <span class="metric-label">En zona glaciar</span>
           </div>
           <div class="metric-card info">
-            <span class="metric-value" id="metricSupTotal">—</span>
-            <span class="metric-label">Superficie km²</span>
+            <span class="metric-value" id="metricSupTotal">â€”</span>
+            <span class="metric-label">Superficie kmÂ²</span>
           </div>
           <div class="metric-card success">
             <span class="metric-value" id="metricProvincias">12</span>
@@ -327,7 +327,7 @@
 
         <!-- Surface by Province -->
         <div class="chart-container">
-          <h3><i class="fa-solid fa-mountain-sun"></i> Superficie Glaciar (km²)</h3>
+          <h3><i class="fa-solid fa-mountain-sun"></i> Superficie Glaciar (kmÂ²)</h3>
           <div class="chart-wrapper tall">
             <canvas id="chartSuperficieProvince"></canvas>
           </div>
@@ -365,7 +365,7 @@
       <div class="tab-content" id="tab-minerals">
         <!-- Mineral distribution in glacier zones -->
         <div class="chart-container">
-          <h3><i class="fa-solid fa-gem"></i> Mineral predominante en áreas glaciares</h3>
+          <h3><i class="fa-solid fa-gem"></i> Mineral predominante en Ã¡reas glaciares</h3>
           <div class="chart-wrapper">
             <canvas id="chartMineralGlaciar"></canvas>
           </div>
@@ -393,11 +393,11 @@
 
         <!-- ESG national KPIs -->
         <div class="chart-container">
-          <h3><i class="fa-solid fa-leaf"></i> Indicadores ESG — Minería Argentina</h3>
+          <h3><i class="fa-solid fa-leaf"></i> Indicadores ESG â€” MinerÃ­a Argentina</h3>
           <div class="esg-kpi-grid" id="esgKpiGrid">
             <div class="esg-kpi-card">
               <span class="esg-kpi-value">USD 210M</span>
-              <span class="esg-kpi-label">Regalías provinciales/año (est. EITI)</span>
+              <span class="esg-kpi-label">RegalÃ­as provinciales/aÃ±o (est. EITI)</span>
             </div>
             <div class="esg-kpi-card">
               <span class="esg-kpi-value">27.500</span>
@@ -405,7 +405,7 @@
             </div>
             <div class="esg-kpi-card">
               <span class="esg-kpi-value">11%</span>
-              <span class="esg-kpi-label">Participación de mujeres en el sector</span>
+              <span class="esg-kpi-label">ParticipaciÃ³n de mujeres en el sector</span>
             </div>
             <div class="esg-kpi-card">
               <span class="esg-kpi-value">28</span>
@@ -413,7 +413,7 @@
             </div>
             <div class="esg-kpi-card esg-highlight">
               <span class="esg-kpi-value">1</span>
-              <span class="esg-kpi-label">Mina certificada TSM · Veladero (2023)</span>
+              <span class="esg-kpi-label">Mina certificada TSM Â· Veladero (2023)</span>
             </div>
             <div class="esg-kpi-card">
               <span class="esg-kpi-value">8</span>
@@ -430,7 +430,7 @@
               <thead>
                 <tr>
                   <th>Proyecto</th>
-                  <th>Regalías</th>
+                  <th>RegalÃ­as</th>
                   <th>Empleo</th>
                   <th>Mujeres</th>
                   <th>TSM</th>
@@ -443,7 +443,7 @@
 
         <!-- CAPMIN supply chain -->
         <div class="chart-container">
-          <h3><i class="fa-solid fa-industry"></i> Cadena de Suministros — CAPMIN</h3>
+          <h3><i class="fa-solid fa-industry"></i> Cadena de Suministros â€” CAPMIN</h3>
           <div class="capmin-filter-row">
             <input type="text" id="capminSearch" placeholder="Buscar proveedor o rubro..." class="capmin-search">
             <select id="capminRubroFilter" class="capmin-select">
@@ -451,7 +451,7 @@
             </select>
           </div>
           <div class="capmin-list" id="capminList"></div>
-          <p class="capmin-footer">Fuente: CAPMIN — capmin.com.ar · 180+ empresas asociadas</p>
+          <p class="capmin-footer">Fuente: CAPMIN â€” capmin.com.ar Â· 180+ empresas asociadas</p>
         </div>
 
       </div>
@@ -468,7 +468,7 @@
     </button>
     <button class="nav-btn" data-view="panelsView" onclick="switchMobileView(this)">
       <i class="fa-solid fa-chart-pie"></i>
-      <span>Análisis</span>
+      <span>AnÃ¡lisis</span>
     </button>
     <button class="nav-btn" data-view="sidebarView" onclick="switchMobileView(this)">
       <i class="fa-solid fa-sliders"></i>
@@ -493,7 +493,7 @@
         </div>
       </div>
       <div class="chat-header-actions">
-        <button class="chat-clear" id="chatClearBtn" title="Limpiar conversación">
+        <button class="chat-clear" id="chatClearBtn" title="Limpiar conversaciÃ³n">
           <i class="fa-solid fa-trash-can"></i>
         </button>
         <button class="chat-close" id="chatCloseBtn" title="Cerrar">
@@ -506,24 +506,24 @@
       <div class="chat-bubble ai">
         <div class="bubble-icon"><i class="fa-solid fa-brain"></i></div>
         <div class="bubble-text">
-          ¡Hola! Soy ColossusAI, una IA especializada en cruzar los datos de glaciares y proyectos mineros
-          visibles en el dashboard. Desarrollada por ColossusLab.tech. ¿En qué te ayudo?
+          Â¡Hola! Soy ColossusAI, una IA especializada en cruzar los datos de glaciares y proyectos mineros
+          visibles en el dashboard. Desarrollada por ColossusLab.tech. Â¿En quÃ© te ayudo?
         </div>
       </div>
       <div class="chat-suggestions" id="chatSuggestions">
-        <button class="suggestion-chip">&#x1F3D4;&#xFE0F; ¿Qué glaciares en San Juan están cerca de minería?</button>
-        <button class="suggestion-chip">&#x2697;&#xFE0F; ¿Cuántos proyectos de litio están en producción?</button>
-        <button class="suggestion-chip">&#x1F4CA; ¿Qué provincia tiene más superficie glaciar?</button>
-        <button class="suggestion-chip">&#x1F4B0; ¿Cuántas regalías paga Veladero a San Juan?</button>
-        <button class="suggestion-chip">&#x1F4A7; ¿Qué glaciares alimentan el Río Mendoza?</button>
-        <button class="suggestion-chip">&#x26A0;&#xFE0F; ¿Dónde hay mayor conflicto minería-glaciares?</button>
-        <button class="suggestion-chip">&#x1F50B; ¿Cuánto litio va a producir Argentina en 2030?</button>
-        <button class="suggestion-chip">&#x1F3ED; ¿Qué proveedores locales hay en Jujuy?</button>
+        <button class="suggestion-chip">&#x1F3D4;&#xFE0F; Â¿QuÃ© glaciares en San Juan estÃ¡n cerca de minerÃ­a?</button>
+        <button class="suggestion-chip">&#x2697;&#xFE0F; Â¿CuÃ¡ntos proyectos de litio estÃ¡n en producciÃ³n?</button>
+        <button class="suggestion-chip">&#x1F4CA; Â¿QuÃ© provincia tiene mÃ¡s superficie glaciar?</button>
+        <button class="suggestion-chip">&#x1F4B0; Â¿CuÃ¡ntas regalÃ­as paga Veladero a San Juan?</button>
+        <button class="suggestion-chip">&#x1F4A7; Â¿QuÃ© glaciares alimentan el RÃ­o Mendoza?</button>
+        <button class="suggestion-chip">&#x26A0;&#xFE0F; Â¿DÃ³nde hay mayor conflicto minerÃ­a-glaciares?</button>
+        <button class="suggestion-chip">&#x1F50B; Â¿CuÃ¡nto litio va a producir Argentina en 2030?</button>
+        <button class="suggestion-chip">&#x1F3ED; Â¿QuÃ© proveedores locales hay en Jujuy?</button>
       </div>
     </div>
 
     <form class="chat-input-area" id="chatForm">
-      <input type="text" id="chatInput" placeholder="Pregúntame sobre minería y glaciares..." autocomplete="off">
+      <input type="text" id="chatInput" placeholder="PregÃºntame sobre minerÃ­a y glaciares..." autocomplete="off">
       <button type="submit" class="chat-send">
         <i class="fa-solid fa-paper-plane"></i>
       </button>
