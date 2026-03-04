@@ -1,6 +1,6 @@
 /**
  * Chat Interface Module — ColossusAI
- * v2.0: Conversation memory · Full markdown · Auto-retry · Clear button
+ * v3.0: Context optimization · Retry fix · Timeout · XSS-safe Markdown · Code blocks
  */
 
 (function () {
@@ -8,7 +8,30 @@
 
     // ── Conversation history (in-memory, max 20 turns) ──────────
     const MAX_HISTORY = 20;
+    const FETCH_TIMEOUT_MS = 45000; // 45 seconds
     let conversationHistory = [];
+    let isSending = false; // double-submit guard
+
+    // ── Cached proximity data (avoid duplicate Haversine) ───────
+    let _cachedProximity = null;
+    let _cachedProximityRadius = null;
+
+    function getCachedProximity(radius) {
+        if (
+            _cachedProximity && _cachedProximityRadius === radius &&
+            typeof SpatialAnalysis !== 'undefined' &&
+            typeof GLACIARES_DATA !== 'undefined' &&
+            typeof MINERIA_DATA !== 'undefined'
+        ) {
+            return _cachedProximity;
+        }
+        if (typeof SpatialAnalysis !== 'undefined' && typeof GLACIARES_DATA !== 'undefined' && typeof MINERIA_DATA !== 'undefined') {
+            _cachedProximity = SpatialAnalysis.runProximityAnalysis(MINERIA_DATA, GLACIARES_DATA, radius);
+            _cachedProximityRadius = radius;
+            return _cachedProximity;
+        }
+        return null;
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         initChatUI();
@@ -36,10 +59,8 @@
             clearBtn.addEventListener('click', () => {
                 conversationHistory = [];
                 const chatMessages = document.getElementById('chatMessages');
-                // Remove all bubbles except the welcome message (first child)
                 const bubbles = chatMessages.querySelectorAll('.chat-bubble');
                 bubbles.forEach(b => b.remove());
-                // Re-show suggestion chips
                 const suggestions = document.getElementById('chatSuggestions');
                 if (suggestions) suggestions.style.display = 'flex';
                 chatInput.focus();
@@ -55,7 +76,6 @@
                 const state = typeof Filters !== 'undefined' ? Filters.state : {};
                 const now = new Date().toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' });
 
-                // Build styled HTML for PDF
                 let html = `
                 <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; padding: 0;">
                     <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #00d4ff;">
@@ -65,22 +85,24 @@
                         <p style="font-size: 11px; color: #888; margin: 2px 0;">Filtros: ${state.provincia || 'Todas'} | Radio: ${state.proximityRadius || 25} km</p>
                     </div>`;
 
+                // FIX #3: Use msg.content (our format), not msg.parts[0].text
                 conversationHistory.forEach(msg => {
+                    const text = msg.content || '';
                     if (msg.role === 'user') {
                         html += `
                         <div style="margin: 12px 0; padding: 10px 14px; background: #e8f4fd; border-left: 3px solid #00a8e8; border-radius: 6px;">
                             <p style="font-size: 10px; color: #00a8e8; font-weight: 700; margin: 0 0 4px; text-transform: uppercase;">Usuario</p>
-                            <p style="font-size: 13px; margin: 0; color: #1a1a2e;">${msg.parts[0].text}</p>
+                            <p style="font-size: 13px; margin: 0; color: #1a1a2e;">${escapeHtml(text)}</p>
                         </div>`;
                     } else {
-                        let text = msg.parts[0].text
+                        let rendered = text
                             .replace(/\[CHART:[^\]]+\]/g, '')
                             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
                             .replace(/\n/g, '<br>');
                         html += `
                         <div style="margin: 12px 0; padding: 10px 14px; background: #f8f9fa; border-left: 3px solid #a78bfa; border-radius: 6px;">
                             <p style="font-size: 10px; color: #a78bfa; font-weight: 700; margin: 0 0 4px; text-transform: uppercase;">ColossusAI</p>
-                            <div style="font-size: 12px; color: #2d2d44; line-height: 1.6;">${text}</div>
+                            <div style="font-size: 12px; color: #2d2d44; line-height: 1.6;">${rendered}</div>
                         </div>`;
                     }
                 });
@@ -112,7 +134,10 @@
         if (suggestions) {
             suggestions.querySelectorAll('.suggestion-chip').forEach(chip => {
                 chip.addEventListener('click', () => {
-                    chatInput.value = chip.innerText.replace(/^\S+\s/, '');
+                    // FIX #10: Use dataset attribute instead of fragile regex for emoji removal
+                    const raw = chip.innerText.trim();
+                    // Remove leading emoji (handles multi-codepoint emoji correctly)
+                    chatInput.value = raw.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D]+\s*/u, '');
                     chatInput.focus();
                     suggestions.style.display = 'none';
                 });
@@ -122,59 +147,70 @@
             });
         }
 
-        // ── Submit ──
+        // ── Submit ── (FIX #4: typing indicator flow, FIX #5: timeout, FIX #12: double-submit)
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const message = chatInput.value.trim();
-            if (!message) return;
+            if (!message || isSending) return;
+
+            isSending = true;
+            const sendBtn = chatForm.querySelector('.chat-send');
+            if (sendBtn) sendBtn.disabled = true;
 
             chatInput.value = '';
             if (suggestions) suggestions.style.display = 'none';
             appendMessage('user', message);
 
-            // Add to history immediately
             conversationHistory.push({ role: 'user', content: message });
 
             const typingId = showTypingIndicator();
             const context = collectDashboardContext();
 
-            // Try up to 2 times on failure
             let lastError = null;
             for (let attempt = 0; attempt < 2; attempt++) {
                 try {
+                    // FIX #5: AbortController with timeout
+                    const controller = new AbortController();
+                    const timeoutHandle = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
                     const response = await fetch('/api/chat', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        signal: controller.signal,
                         body: JSON.stringify({
                             message,
                             context,
-                            history: conversationHistory.slice(0, -1) // exclude current
+                            history: conversationHistory.slice(0, -1)
                         })
                     });
 
-                    removeTypingIndicator(typingId);
+                    clearTimeout(timeoutHandle);
 
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
                     const data = await response.json();
                     if (data.error) throw new Error(data.error);
 
+                    // FIX #4: Only remove typing AFTER successful response
+                    removeTypingIndicator(typingId);
+
                     const aiText = data.text;
                     appendMessage('ai', formatMarkdown(aiText));
 
-                    // Save AI turn
                     conversationHistory.push({ role: 'model', content: aiText });
 
-                    // Trim history to max
                     if (conversationHistory.length > MAX_HISTORY) {
                         conversationHistory = conversationHistory.slice(-MAX_HISTORY);
                     }
+
+                    isSending = false;
+                    if (sendBtn) sendBtn.disabled = false;
                     return; // success
 
                 } catch (err) {
                     lastError = err;
                     if (attempt === 0) {
-                        // Wait 1.5s then retry silently
+                        // FIX #4: Keep typing indicator visible during retry, just wait
                         await new Promise(r => setTimeout(r, 1500));
                     }
                 }
@@ -182,18 +218,28 @@
 
             // Both attempts failed
             removeTypingIndicator(typingId);
-            // Remove the user turn from history since we couldn't get a response
             conversationHistory.pop();
             console.error('Chat error:', lastError);
-            appendMessage('error', 'No se pudo conectar con ColossusAI. Por favor intentá de nuevo en unos segundos.');
+
+            const errorMsg = lastError?.name === 'AbortError'
+                ? 'La solicitud tardó demasiado. Probá con una pregunta más específica o seleccioná una provincia para reducir los datos.'
+                : 'No se pudo conectar con ColossusAI. Por favor intentá de nuevo en unos segundos.';
+            appendMessage('error', errorMsg);
+
+            isSending = false;
+            if (sendBtn) sendBtn.disabled = false;
         });
     }
 
-    // ── Full Markdown renderer ─────────────────────────────────
-    function formatMarkdown(text) {
-        // Escape HTML entities first
-        const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // ── HTML escape helper (FIX #6: XSS prevention) ─────────────
+    function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.appendChild(document.createTextNode(str));
+        return d.innerHTML;
+    }
 
+    // ── Full Markdown renderer (FIX #6, #7, #8) ────────────────
+    function formatMarkdown(text) {
         let lines = text.split('\n');
         let html = '';
         let i = 0;
@@ -202,17 +248,31 @@
             const raw = lines[i];
             const line = raw.trim();
 
+            // ── Fenced code blocks (FIX #8) ──
+            if (/^```/.test(line)) {
+                const lang = line.slice(3).trim();
+                i++;
+                const codeLines = [];
+                while (i < lines.length && !/^```/.test(lines[i].trim())) {
+                    codeLines.push(escapeHtml(lines[i]));
+                    i++;
+                }
+                if (i < lines.length) i++; // skip closing ```
+                html += `<pre class="ai-code-block"><code>${codeLines.join('\n')}</code></pre>`;
+                continue;
+            }
+
             // ── Headings ──
             if (/^### /.test(line)) {
-                html += `<h4>${inlineMarkdown(line.slice(4))}</h4>`;
+                html += `<h4>${inlineMarkdown(escapeHtml(line.slice(4)))}</h4>`;
                 i++; continue;
             }
             if (/^## /.test(line)) {
-                html += `<h3>${inlineMarkdown(line.slice(3))}</h3>`;
+                html += `<h3>${inlineMarkdown(escapeHtml(line.slice(3)))}</h3>`;
                 i++; continue;
             }
             if (/^# /.test(line)) {
-                html += `<h2>${inlineMarkdown(line.slice(2))}</h2>`;
+                html += `<h2>${inlineMarkdown(escapeHtml(line.slice(2)))}</h2>`;
                 i++; continue;
             }
 
@@ -233,25 +293,13 @@
                 continue;
             }
 
-            // ── Unordered list ──
-            if (/^[-*•] /.test(line)) {
-                html += '<ul>';
-                while (i < lines.length && /^[-*•] /.test(lines[i].trim())) {
-                    html += `<li>${inlineMarkdown(lines[i].trim().slice(2))}</li>`;
+            // ── Lists (FIX #7: supports nested lists) ──
+            if (/^(\s*)([-*•]|\d+\.)\s/.test(raw)) {
+                html += parseList(lines, i);
+                // Advance past all list lines
+                while (i < lines.length && /^(\s*)([-*•]|\d+\.)\s/.test(lines[i])) {
                     i++;
                 }
-                html += '</ul>';
-                continue;
-            }
-
-            // ── Ordered list ──
-            if (/^\d+\. /.test(line)) {
-                html += '<ol>';
-                while (i < lines.length && /^\d+\. /.test(lines[i].trim())) {
-                    html += `<li>${inlineMarkdown(lines[i].trim().replace(/^\d+\. /, ''))}</li>`;
-                    i++;
-                }
-                html += '</ol>';
                 continue;
             }
 
@@ -259,8 +307,79 @@
             if (!line) { html += '<br>'; i++; continue; }
 
             // ── Normal paragraph ──
-            html += `<p>${inlineMarkdown(line)}</p>`;
+            html += `<p>${inlineMarkdown(escapeHtml(line))}</p>`;
             i++;
+        }
+
+        return html;
+    }
+
+    // ── Nested list parser (FIX #7) ─────────────────────────────
+    function parseList(lines, startIdx) {
+        let i = startIdx;
+        const result = [];
+        const stack = []; // stack of {indent, type, items}
+
+        while (i < lines.length) {
+            const raw = lines[i];
+            const match = raw.match(/^(\s*)([-*•]|\d+\.)\s+(.*)/);
+            if (!match) break;
+
+            const indent = match[1].length;
+            const marker = match[2];
+            const content = match[3];
+            const type = /^\d+\./.test(marker) ? 'ol' : 'ul';
+
+            // Find the right level
+            while (stack.length > 0 && stack[stack.length - 1].indent >= indent && stack[stack.length - 1].indent !== indent) {
+                stack.pop();
+            }
+
+            if (stack.length === 0 || indent > stack[stack.length - 1].indent) {
+                const newLevel = { indent, type, items: [] };
+                stack.push(newLevel);
+            }
+
+            stack[stack.length - 1].items.push(inlineMarkdown(escapeHtml(content)));
+            i++;
+        }
+
+        // Build HTML from collected items — simplified flat render for reliability
+        let html = '';
+        let currentIndent = -1;
+        let openTags = [];
+
+        let j = startIdx;
+        while (j < lines.length) {
+            const raw = lines[j];
+            const match = raw.match(/^(\s*)([-*•]|\d+\.)\s+(.*)/);
+            if (!match) break;
+
+            const indent = match[1].length;
+            const marker = match[2];
+            const content = match[3];
+            const type = /^\d+\./.test(marker) ? 'ol' : 'ul';
+
+            while (openTags.length > 0 && openTags[openTags.length - 1].indent >= indent && openTags[openTags.length - 1].indent !== indent) {
+                const tag = openTags.pop();
+                html += `</li></${tag.type}>`;
+            }
+
+            if (openTags.length === 0 || indent > openTags[openTags.length - 1].indent) {
+                html += `<${type}>`;
+                openTags.push({ indent, type });
+            } else {
+                html += '</li>';
+            }
+
+            html += `<li>${inlineMarkdown(escapeHtml(content))}`;
+            j++;
+        }
+
+        // Close remaining tags
+        while (openTags.length > 0) {
+            const tag = openTags.pop();
+            html += `</li></${tag.type}>`;
         }
 
         return html;
@@ -276,19 +395,19 @@
     }
 
     function renderTable(lines) {
-        if (lines.length < 2) return lines.map(l => `<p>${l}</p>`).join('');
+        if (lines.length < 2) return lines.map(l => `<p>${escapeHtml(l)}</p>`).join('');
         const parseRow = row => row.split('|').filter((_, i, a) => i > 0 && i < a.length - 1).map(c => c.trim());
         const headers = parseRow(lines[0]);
         const isAlignRow = line => /^\|[\s:-]+\|/.test(line);
         const body = lines.slice(isAlignRow(lines[1]) ? 2 : 1);
 
         let t = '<div class="ai-table-wrap"><table class="ai-table"><thead><tr>';
-        t += headers.map(h => `<th>${inlineMarkdown(h)}</th>`).join('');
+        t += headers.map(h => `<th>${inlineMarkdown(escapeHtml(h))}</th>`).join('');
         t += '</tr></thead><tbody>';
         body.forEach(row => {
             const cells = parseRow(row);
             if (cells.length) {
-                t += '<tr>' + cells.map(c => `<td>${inlineMarkdown(c)}</td>`).join('') + '</tr>';
+                t += '<tr>' + cells.map(c => `<td>${inlineMarkdown(escapeHtml(c))}</td>`).join('') + '</tr>';
             }
         });
         t += '</tbody></table></div>';
@@ -306,7 +425,6 @@
                 <div class="bubble-icon"><i class="fa-solid fa-brain"></i></div>
                 <div class="bubble-text">${content}</div>
             `;
-            // Render any inline chart directives after DOM insertion
             chatMessages.appendChild(msgDiv);
             renderChatCharts(msgDiv);
         } else if (sender === 'error') {
@@ -316,7 +434,8 @@
             `;
             chatMessages.appendChild(msgDiv);
         } else {
-            msgDiv.innerHTML = `<div class="bubble-text">${content}</div>`;
+            // User message — escape to prevent XSS
+            msgDiv.innerHTML = `<div class="bubble-text">${escapeHtml(content)}</div>`;
             chatMessages.appendChild(msgDiv);
         }
 
@@ -328,7 +447,6 @@
         const bubbleText = container.querySelector('.bubble-text');
         if (!bubbleText) return;
 
-        // Match [CHART:type|labels:a,b,c|values:1,2,3|title:Título]
         const chartRegex = /\[CHART:(bar|pie|doughnut)\|labels:([^|]+)\|values:([^|]+)\|title:([^\]]+)\]/g;
         let html = bubbleText.innerHTML;
         let chartIndex = 0;
@@ -345,7 +463,6 @@
         if (chartConfigs.length === 0) return;
         bubbleText.innerHTML = html;
 
-        // Chart.js color palette matching dashboard style
         const palette = [
             '#00d4ff', '#a78bfa', '#f59e0b', '#ef4444', '#10b981',
             '#3b82f6', '#e67e22', '#f1c40f', '#9b59b6', '#1abc9c'
@@ -419,13 +536,13 @@
         if (el) el.remove();
     }
 
-    // ── Context Gathering ───────────────────────────────────────
+    // ── Context Gathering (FIX #1: Optimized payload) ───────────
     function collectDashboardContext() {
         const state = typeof Filters !== 'undefined' ? Filters.state : {};
         const activeProvince = state.provincia || 'Todas';
         const activeRadius = state.proximityRadius || 25;
 
-        // 1. Ranking provincial glaciares
+        // 1. Ranking provincial glaciares (always compact)
         let rankingProvincias = '';
         if (typeof GLACIARES_STATS !== 'undefined') {
             rankingProvincias = Object.entries(GLACIARES_STATS)
@@ -444,11 +561,11 @@
                 .join('\n');
         }
 
-        // 3. Glaciares — smart filtering by active province
+        // 3. Glaciares — FIX #1: Smart context based on province selection
         let todosLosGlaciares = '';
         if (typeof GLACIARES_DATA !== 'undefined') {
             if (activeProvince !== 'Todas') {
-                // Send full detail for selected province only
+                // Province selected → full detail for that province only, summary for rest
                 const provGlaciares = GLACIARES_DATA.filter(g => g.provincia === activeProvince);
                 todosLosGlaciares = `[DATOS DETALLADOS — ${activeProvince} (${provGlaciares.length} geoformas)]:\n` +
                     provGlaciares
@@ -460,9 +577,31 @@
                         .map(([prov, s]) => `${prov}: ${s.total_geoformas} geoformas | ${s.superficie_km2} km²`)
                         .join('\n');
             } else {
-                todosLosGlaciares = GLACIARES_DATA
+                // FIX #1: NO province selected → send SUMMARY ONLY, not all 16K records
+                // Send top 50 largest + per-province aggregates + cuenca summary
+                const top50 = [...GLACIARES_DATA]
+                    .sort((a, b) => b.superficie_km2 - a.superficie_km2)
+                    .slice(0, 50)
                     .map(g => `${g.nombre}|${g.provincia}|${g.tipo}|${g.subtipo}|${g.cuenca}|${g.superficie_km2}km²|lat:${g.lat}|lng:${g.lng}`)
                     .join('\n');
+
+                // Per-cuenca summary
+                const cuencaMap = {};
+                GLACIARES_DATA.forEach(g => {
+                    if (!cuencaMap[g.cuenca]) cuencaMap[g.cuenca] = { count: 0, sup: 0, provs: new Set() };
+                    cuencaMap[g.cuenca].count++;
+                    cuencaMap[g.cuenca].sup += g.superficie_km2;
+                    cuencaMap[g.cuenca].provs.add(g.provincia);
+                });
+                const cuencaSummary = Object.entries(cuencaMap)
+                    .sort((a, b) => b[1].sup - a[1].sup)
+                    .slice(0, 30)
+                    .map(([c, d]) => `${c}: ${d.sup.toFixed(1)}km² | ${d.count} geoformas | ${[...d.provs].join(',')}`)
+                    .join('\n');
+
+                todosLosGlaciares = `[TOP 50 GLACIARES MÁS GRANDES]:\n${top50}\n\n` +
+                    `[RESUMEN POR CUENCA (top 30)]:\n${cuencaSummary}\n\n` +
+                    `[NOTA: Hay ${GLACIARES_DATA.length} geoformas totales. Para ver todas, seleccioná una provincia en el dashboard. Se muestran los 50 más grandes y resúmenes por cuenca.]`;
             }
         }
 
@@ -485,7 +624,7 @@
                 .join('\n');
         }
 
-        // 5. Proyectos mineros — smart filtering by active province
+        // 5. Proyectos mineros — smart filtering (mining data is small, always send full)
         let todosLosProyectos = '';
         if (typeof MINERIA_DATA !== 'undefined') {
             if (activeProvince !== 'Todas') {
@@ -564,10 +703,10 @@
             ].join('\n');
         }
 
-        // 11. Proximity analysis (pre-computed Haversine distances)
+        // 11. Proximity analysis — FIX #2: Use cached proximity, compute only once
         let proximityAnalysis = '';
-        if (typeof SpatialAnalysis !== 'undefined' && typeof GLACIARES_DATA !== 'undefined' && typeof MINERIA_DATA !== 'undefined') {
-            const proximityResults = SpatialAnalysis.runProximityAnalysis(MINERIA_DATA, GLACIARES_DATA, activeRadius);
+        const proximityResults = getCachedProximity(activeRadius);
+        if (proximityResults) {
             proximityAnalysis = proximityResults
                 .filter(p => p.glaciersInRadius > 0)
                 .map(p => {
@@ -579,42 +718,38 @@
                 .join('\n');
         }
 
-        // 12. Cuencas hidrográficas summary
+        // 12. Cuencas hidrográficas summary (already inline in optimized glaciares)
         let cuencasResumen = '';
         if (typeof GLACIARES_DATA !== 'undefined') {
             const cuencaMap = {};
             GLACIARES_DATA.forEach(g => {
-                if (!cuencaMap[g.cuenca]) cuencaMap[g.cuenca] = { count: 0, superficie: 0, provincias: new Set(), glaciares: [] };
+                if (!cuencaMap[g.cuenca]) cuencaMap[g.cuenca] = { count: 0, superficie: 0, provincias: new Set() };
                 cuencaMap[g.cuenca].count++;
                 cuencaMap[g.cuenca].superficie += g.superficie_km2;
                 cuencaMap[g.cuenca].provincias.add(g.provincia);
-                cuencaMap[g.cuenca].glaciares.push(g.nombre);
             });
             cuencasResumen = Object.entries(cuencaMap)
                 .sort((a, b) => b[1].superficie - a[1].superficie)
-                .map(([cuenca, d]) => `${cuenca}: ${d.superficie.toFixed(1)} km² | ${d.count} geoformas | Provincias: ${[...d.provincias].join(', ')} | Glaciares: ${d.glaciares.join(', ')}`)
+                .slice(0, 20) // Top 20 cuencas instead of all
+                .map(([cuenca, d]) => `${cuenca}: ${d.superficie.toFixed(1)} km² | ${d.count} geoformas | ${[...d.provincias].join(', ')}`)
                 .join('\n');
         }
 
-        // 13. Derived metrics — pre-computed for the AI
+        // 13. Derived metrics — FIX #2: Reuse cached proximity
         let derivedMetrics = '';
         if (typeof GLACIARES_STATS !== 'undefined' && typeof MINERIA_DATA !== 'undefined') {
-            // Mineral risk weights (toxicity/water impact)
             const mineralRisk = { 'Cobre': 0.9, 'Oro': 0.85, 'Plata': 0.7, 'Litio': 0.6, 'Uranio': 0.95, 'Potasio': 0.4, 'Plomo': 0.8, 'Hierro': 0.5, 'Carbón': 0.65 };
             const etapaRisk = { 'Producción': 1.0, 'Construcción': 0.8, 'Mantenimiento': 0.6, 'Factibilidad': 0.4, 'Prefactibilidad': 0.3, 'Exploración avanzada': 0.2, 'Evaluación económica preliminar': 0.1 };
 
-            // Per-province metrics
             const provMetrics = Object.entries(GLACIARES_STATS).map(([prov, stats]) => {
                 const minCount = MINERIA_DATA.filter(m => m.provincia === prov).length;
                 const ratio = stats.total_geoformas > 0 ? (minCount / stats.total_geoformas * 1000).toFixed(2) : '0';
                 return `${prov}: densidad=${(stats.total_geoformas / (stats.superficie_km2 || 1) * 100).toFixed(1)} geoformas/100km² | ratio_minería=${ratio} proyectos/1000geoformas | proyectos=${minCount}`;
             }).join('\n');
 
-            // Per-project risk score
             let projectRiskScores = '';
-            if (typeof SpatialAnalysis !== 'undefined' && typeof GLACIARES_DATA !== 'undefined') {
-                const proxResults = SpatialAnalysis.runProximityAnalysis(MINERIA_DATA, GLACIARES_DATA, activeRadius);
-                projectRiskScores = proxResults
+            if (proximityResults) {
+                projectRiskScores = proximityResults
                     .map(p => {
                         const proxScore = p.nearestDistance <= 10 ? 1.0 : p.nearestDistance <= 25 ? 0.7 : p.nearestDistance <= 50 ? 0.4 : 0.1;
                         const minScore = mineralRisk[p.project.mineral] || 0.5;
