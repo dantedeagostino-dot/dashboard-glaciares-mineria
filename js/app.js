@@ -80,9 +80,39 @@
             })
         }).addTo(map);
 
-        // Initialize empty layer groups
-        glaciarLayer = L.layerGroup().addTo(map);
-        periglacialLayer = L.layerGroup().addTo(map);
+        // Initialize layer groups — use MarkerCluster for glacier/periglacial (17,840 markers)
+        glaciarLayer = L.markerClusterGroup({
+            maxClusterRadius: 50,
+            spiderfyOnMaxZoom: true,
+            disableClusteringAtZoom: 13,
+            iconCreateFunction: function (cluster) {
+                const count = cluster.getChildCount();
+                let size = 'small', r = 30;
+                if (count > 100) { size = 'large'; r = 50; }
+                else if (count > 20) { size = 'medium'; r = 40; }
+                return L.divIcon({
+                    html: `<div style="background:rgba(0,212,255,0.7);color:#fff;border-radius:50%;width:${r}px;height:${r}px;display:flex;align-items:center;justify-content:center;font-size:${r < 40 ? 11 : 13}px;font-weight:700;border:2px solid rgba(0,212,255,0.9);box-shadow:0 0 12px rgba(0,212,255,0.5);">${count}</div>`,
+                    className: 'glacier-cluster glacier-cluster-' + size,
+                    iconSize: L.point(r, r)
+                });
+            }
+        }).addTo(map);
+        periglacialLayer = L.markerClusterGroup({
+            maxClusterRadius: 50,
+            spiderfyOnMaxZoom: true,
+            disableClusteringAtZoom: 13,
+            iconCreateFunction: function (cluster) {
+                const count = cluster.getChildCount();
+                let size = 'small', r = 30;
+                if (count > 100) { size = 'large'; r = 50; }
+                else if (count > 20) { size = 'medium'; r = 40; }
+                return L.divIcon({
+                    html: `<div style="background:rgba(167,139,250,0.7);color:#fff;border-radius:50%;width:${r}px;height:${r}px;display:flex;align-items:center;justify-content:center;font-size:${r < 40 ? 11 : 13}px;font-weight:700;border:2px solid rgba(167,139,250,0.9);box-shadow:0 0 12px rgba(167,139,250,0.5);">${count}</div>`,
+                    className: 'periglacial-cluster periglacial-cluster-' + size,
+                    iconSize: L.point(r, r)
+                });
+            }
+        }).addTo(map);
         mineriaLayer = L.layerGroup().addTo(map);
         alertsLayer = L.layerGroup().addTo(map);
         provinciaLayer = L.layerGroup().addTo(map);
@@ -379,6 +409,13 @@
         </div>`;
         }
 
+        const altitudHtml = g.altitud_max ? `
+      <div class="popup-row"><span class="label">Altitud</span><span class="value">${g.altitud_min}–${g.altitud_max} m (media: ${g.altitud_media} m)</span></div>` : '';
+        const slopeHtml = g.pendiente ? `
+      <div class="popup-row"><span class="label">Pendiente</span><span class="value">${g.pendiente}° | Orient: ${g.orientacion || 'N/D'}</span></div>` : '';
+        const subcuencaHtml = g.subcuenca ? `
+      <div class="popup-row"><span class="label">Subcuenca</span><span class="value">${g.subcuenca}</span></div>` : '';
+
         return `<div class="popup-content">
       <h4 class="glacier-title"><i class="fa-solid fa-snowflake" style="margin-right:6px"></i>${g.nombre}</h4>
       <div class="popup-row"><span class="label">Tipo</span><span class="value">${g.tipo}</span></div>
@@ -386,6 +423,9 @@
       <div class="popup-row"><span class="label">Provincia</span><span class="value">${g.provincia}</span></div>
       <div class="popup-row"><span class="label">Superficie</span><span class="value">${g.superficie_km2} km²</span></div>
       <div class="popup-row"><span class="label">Cuenca</span><span class="value">${g.cuenca}</span></div>
+      ${subcuencaHtml}
+      ${altitudHtml}
+      ${slopeHtml}
       <div class="popup-row"><span class="label">Coordenadas</span><span class="value">${g.lat.toFixed(4)}, ${g.lng.toFixed(4)}</span></div>
       <div class="popup-row"><span class="label">Proy. minero cercano</span><span class="value">${nearestText}</span></div>
       ${alertHtml}
