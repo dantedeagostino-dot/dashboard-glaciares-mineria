@@ -10,6 +10,7 @@
     let map;
     let glaciarLayer, periglacialLayer, mineriaLayer, alertsLayer, provinciaLayer;
     let segeMarLayer; // SIGAM WMS — geological units (SEGEMAR)
+    let glaciarPolygonLayer = null; // GeoJSON polygon outlines (loaded on demand)
     let currentProximityData = [];
     let currentMineralAnalysis = {};
 
@@ -141,6 +142,79 @@
                 }
             });
         }
+        // Glacier polygon outlines toggle (loaded on demand)
+        const polyToggle = document.getElementById('layerPoligonos');
+        if (polyToggle) {
+            polyToggle.addEventListener('change', e => {
+                if (e.target.checked) {
+                    if (glaciarPolygonLayer) {
+                        map.addLayer(glaciarPolygonLayer);
+                    } else {
+                        loadGlacierPolygons();
+                    }
+                } else if (glaciarPolygonLayer) {
+                    map.removeLayer(glaciarPolygonLayer);
+                }
+            });
+        }
+    }
+
+    // ── Glacier Polygon GeoJSON Layer ──────────────
+    const POLYGON_TYPE_COLORS = {
+        'GD': '#00d4ff', // Glaciar Descubierto – cyan
+        'GC': '#3b82f6', // Glaciar Cubierto – blue
+        'GCGE': '#8b5cf6', // Glaciar Cubierto/Geoforma Periglaciar – purple
+        'GEA': '#f59e0b', // Geoforma Ambiente Glaciar – amber
+        'GEI': '#ec4899', // Geoforma Ambiente Periglaciar – pink
+        'MN': '#e2e8f0', // Manchón de Nieve – white
+    };
+    const POLYGON_TYPE_NAMES = {
+        'GD': 'Glaciar Descubierto', 'GC': 'Glaciar Cubierto',
+        'GCGE': 'Glaciar Cubierto / Geoforma Periglaciar',
+        'GEA': 'Geoforma de Ambiente Glaciar',
+        'GEI': 'Geoforma de Ambiente Periglaciar', 'MN': 'Manchón de Nieve',
+    };
+
+    function loadGlacierPolygons() {
+        const countEl = document.getElementById('countPoligonos');
+        if (countEl) countEl.textContent = 'cargando…';
+
+        fetch('data/glaciares_polygons.geojson')
+            .then(r => r.json())
+            .then(geojson => {
+                glaciarPolygonLayer = L.geoJSON(geojson, {
+                    style: function (feature) {
+                        const tipo = feature.properties.t || 'MN';
+                        const color = POLYGON_TYPE_COLORS[tipo] || '#00d4ff';
+                        return {
+                            color: color,
+                            weight: 1.5,
+                            opacity: 0.85,
+                            fillColor: color,
+                            fillOpacity: 0.25,
+                        };
+                    },
+                    onEachFeature: function (feature, layer) {
+                        const p = feature.properties;
+                        const tipoName = POLYGON_TYPE_NAMES[p.t] || p.t;
+                        layer.bindPopup(`
+                            <div class="popup-content">
+                                <h4 class="glacier-title"><i class="fa-solid fa-draw-polygon" style="margin-right:6px"></i>${p.n}</h4>
+                                <div class="popup-row"><span class="label">Tipo</span><span class="value">${tipoName}</span></div>
+                                <div class="popup-row"><span class="label">Provincia</span><span class="value">${p.p}</span></div>
+                                <div class="popup-row"><span class="label">Cuenca</span><span class="value">${p.c}</span></div>
+                                <div class="popup-row"><span class="label">Superficie</span><span class="value">${p.a} km²</span></div>
+                            </div>
+                        `, { maxWidth: 300 });
+                    }
+                }).addTo(map);
+
+                if (countEl) countEl.textContent = `${geojson.features.length.toLocaleString()} polígonos`;
+            })
+            .catch(err => {
+                console.error('Error loading glacier polygons:', err);
+                if (countEl) countEl.textContent = 'error al cargar';
+            });
     }
 
     // ── Load Data ──────────────────────────────────

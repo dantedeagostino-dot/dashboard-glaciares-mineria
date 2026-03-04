@@ -1,5 +1,4 @@
-node_modules/
-.DS_Store
-*.log
-.env
-.vercel
+# Large source data files (not needed for deployment)
+SHAPEFILE ZONAS GLACIARES Y PERIGLACIARES/
+ZONA GLACIARES Y PERIGLACIARES.kmz
+*.kmz
