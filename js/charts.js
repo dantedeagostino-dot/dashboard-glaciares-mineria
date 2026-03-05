@@ -220,11 +220,11 @@ const DashboardCharts = {
         const top15 = proximityData.slice(0, 15);
 
         const bgColors = top15.map(p => {
-            switch (p.risk) {
-                case 'critical': return 'rgba(239, 68, 68, 0.7)';
-                case 'high': return 'rgba(245, 158, 11, 0.7)';
-                case 'medium': return 'rgba(59, 130, 246, 0.7)';
-                default: return 'rgba(16, 185, 129, 0.5)';
+            switch (p.proximityCategory) {
+                case 'inmediata': return 'rgba(59, 130, 246, 0.9)';
+                case 'cercana': return 'rgba(59, 130, 246, 0.7)';
+                case 'media': return 'rgba(59, 130, 246, 0.5)';
+                default: return 'rgba(59, 130, 246, 0.3)';
             }
         });
 

@@ -75,8 +75,8 @@ ${context?.cadenaSuministros || 'CAPMIN: 180+ empresas proveedoras. ~65% son PyM
 ═══════════════════════════════════════════
 ANÁLISIS DE PROXIMIDAD ESPACIAL (distancias reales Haversine pre-calculadas):
 Radio actual del dashboard: ${context?.filtrosActivos || '25 km'}
-Proyectos con glaciares dentro del radio (proyecto|glaciar_cercano|distancia|riesgo|cantidad):
-${context?.proximidadReal || 'Sin alertas de proximidad'}
+Proyectos con glaciares dentro del radio (proyecto|glaciar_cercano|distancia|proximidad|cantidad):
+${context?.proximidadReal || 'Sin datos de proximidad'}
 ═══════════════════════════════════════════
 
 ═══════════════════════════════════════════
@@ -99,7 +99,7 @@ ${context?.metricasDerivadas || 'No disponible'}
 INSTRUCCIONES:
 - Usá los datos anteriores para responder con precisión y números reales.
 - **USÁS las distancias de proximidad pre-calculadas** cuando te pregunten sobre glaciares cerca de minería. NO adivines distancias.
-- **Usá los RISK SCORES pre-calculados** para preguntas sobre riesgo ambiental. Son scores de 0-10 que combinan proximidad, toxicidad del mineral y etapa del proyecto.
+- **Usá los ÍNDICES DE PROXIMIDAD pre-calculados** para preguntas sobre cercanía a glaciares. Son índices de 0-10 que combinan proximidad, tipo de mineral y etapa del proyecto. No implican evaluación de riesgo ambiental.
 - Hacé análisis comparativos y rankings cuando sea útil (tablas Markdown si hay más de 3 items).
 - Si tenés historial de conversación, considerá el contexto previo para dar respuestas coherentes.
 - Para preguntas de retracción o cambio climático, usá los datos de la Resolución 142/2024.

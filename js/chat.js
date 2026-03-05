@@ -713,7 +713,7 @@
                     const top5 = p.glaciersInRadiusList.slice(0, 5)
                         .map(g => `${g.nombre}(${g.distance_km}km)`)
                         .join(', ');
-                    return `${p.project.nombre}(${p.project.mineral},${p.project.provincia})|glaciar_más_cercano:${p.nearestGlacier?.nombre}|dist:${p.nearestDistance}km|riesgo:${p.risk}|glaciares_en_radio:${p.glaciersInRadius}|cercanos:[${top5}]`;
+                    return `${p.project.nombre}(${p.project.mineral},${p.project.provincia})|glaciar_más_cercano:${p.nearestGlacier?.nombre}|dist:${p.nearestDistance}km|proximidad:${p.proximityCategory}|glaciares_en_radio:${p.glaciersInRadius}|cercanos:[${top5}]`;
                 })
                 .join('\n');
         }
@@ -739,7 +739,7 @@
         let derivedMetrics = '';
         if (typeof GLACIARES_STATS !== 'undefined' && typeof MINERIA_DATA !== 'undefined') {
             const mineralRisk = { 'Cobre': 0.9, 'Oro': 0.85, 'Plata': 0.7, 'Litio': 0.6, 'Uranio': 0.95, 'Potasio': 0.4, 'Plomo': 0.8, 'Hierro': 0.5, 'Carbón': 0.65 };
-            const etapaRisk = { 'Producción': 1.0, 'Construcción': 0.8, 'Mantenimiento': 0.6, 'Factibilidad': 0.4, 'Prefactibilidad': 0.3, 'Exploración avanzada': 0.2, 'Evaluación económica preliminar': 0.1 };
+            const etapaRisk = { 'Producción': 1.0, 'Construcción': 0.8, 'Cese de operaciones': 0.6, 'Factibilidad': 0.4, 'Prefactibilidad': 0.3, 'Exploración avanzada': 0.2, 'Evaluación económica preliminar': 0.1 };
 
             const provMetrics = Object.entries(GLACIARES_STATS).map(([prov, stats]) => {
                 const minCount = MINERIA_DATA.filter(m => m.provincia === prov).length;
@@ -761,7 +761,7 @@
                     .join('\n');
             }
 
-            derivedMetrics = `MÉTRICAS POR PROVINCIA:\n${provMetrics}\n\nRISK SCORE POR PROYECTO (0-10, mayor=más riesgo):\n${projectRiskScores}`;
+            derivedMetrics = `MÉTRICAS POR PROVINCIA:\n${provMetrics}\n\nÍNDICE DE PROXIMIDAD POR PROYECTO (0-10, mayor=más cercano):\n${projectRiskScores}`;
         }
 
         return {

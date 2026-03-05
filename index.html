@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description"
     content="Dashboard interactivo para el análisis de glaciares y proyectos mineros en Argentina. Inventario Nacional de Glaciares + Cartera SIACAM.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://wms.ign.gob.ar https://sigam.segemar.gov.ar https://unpkg.com https://server.arcgisonline.com; connect-src 'self' https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://wms.ign.gob.ar https://sigam.segemar.gov.ar https://server.arcgisonline.com https://ide.ign.gob.ar https://generativelanguage.googleapis.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://wms.ign.gob.ar https://sigam.segemar.gov.ar https://unpkg.com https://server.arcgisonline.com; connect-src 'self' https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://wms.ign.gob.ar https://sigam.segemar.gov.ar https://server.arcgisonline.com https://ide.ign.gob.ar https://generativelanguage.googleapis.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <title>Glaciares & Minería — Dashboard Argentina</title>
@@ -62,9 +63,9 @@
           <span class="stat-value" id="statProyectos">82</span>
           <span class="stat-label">Proyectos Mineros</span>
         </div>
-        <div class="header-stat danger">
+        <div class="header-stat info">
           <span class="stat-value" id="statAlertas">0</span>
-          <span class="stat-label">Alertas Proximidad</span>
+          <span class="stat-label">En Proximidad</span>
         </div>
       </div>
     </header>
@@ -83,7 +84,7 @@
             <input type="checkbox" id="layerGlaciares" checked>
             <span class="toggle-switch"></span>
             <div class="layer-info">
-              <span class="layer-name">Glaciares</span>
+              <span class="layer-name">Amb. Glacial</span>
               <span class="layer-count" id="countGlaciares">— puntos</span>
             </div>
           </label>
@@ -91,7 +92,7 @@
             <input type="checkbox" id="layerPeriglacial" checked>
             <span class="toggle-switch"></span>
             <div class="layer-info">
-              <span class="layer-name">Ambiente Periglacial</span>
+              <span class="layer-name">Amb. Periglacial</span>
               <span class="layer-count" id="countPeriglacial">— puntos</span>
             </div>
           </label>
@@ -107,7 +108,7 @@
             <input type="checkbox" id="layerAlertas" checked>
             <span class="toggle-switch"></span>
             <div class="layer-info">
-              <span class="layer-name">Alertas de Proximidad</span>
+              <span class="layer-name">Indicadores de Proximidad</span>
               <span class="layer-count" id="countAlertas">radio configurable</span>
             </div>
           </label>
@@ -159,16 +160,16 @@
       <!-- Glacier Type Filter -->
       <div class="control-panel">
         <div class="panel-header" onclick="togglePanel(this)">
-          <h3><i class="fa-solid fa-snowflake"></i> Tipo de Glaciar</h3>
+          <h3><i class="fa-solid fa-snowflake"></i> Tipo de Geoforma</h3>
           <i class="fa-solid fa-chevron-down toggle-icon"></i>
         </div>
         <div class="panel-body">
           <div class="checkbox-group" id="filterTipoGlaciar">
             <div class="chip active" data-value="Glaciar" onclick="toggleChip(this)">
-              <i class="fa-solid fa-circle" style="color: var(--glacier-primary); font-size:6px"></i> Glaciar
+              <i class="fa-solid fa-circle" style="color: var(--glacier-primary); font-size:6px"></i> Amb. Glacial
             </div>
             <div class="chip active" data-value="Ambiente Periglacial" onclick="toggleChip(this)">
-              <i class="fa-solid fa-circle" style="color: var(--periglacial); font-size:6px"></i> Periglacial
+              <i class="fa-solid fa-circle" style="color: var(--periglacial); font-size:6px"></i> Amb. Periglacial
             </div>
           </div>
           <div class="filter-group" style="margin-top: 8px;">
@@ -177,6 +178,24 @@
               <input type="range" id="filterSuperficie" min="0" max="100" value="0" step="0.1"
                 oninput="updateRangeLabel(this)">
               <div class="range-value" id="filterSuperficieLabel">= 0 km²</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tipo de Proyecto Filter -->
+      <div class="control-panel">
+        <div class="panel-header" onclick="togglePanel(this)">
+          <h3><i class="fa-solid fa-layer-group"></i> Tipo de Proyecto</h3>
+          <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="panel-body">
+          <div class="checkbox-group" id="filterTipoProyecto">
+            <div class="chip active" data-value="Metalífero" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #f59e0b; font-size:6px"></i> Metalífero
+            </div>
+            <div class="chip active" data-value="No Metalífero" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #78909c; font-size:6px"></i> No Metalífero
             </div>
           </div>
         </div>
@@ -217,6 +236,15 @@
             <div class="chip active" data-value="Carbón" onclick="toggleChip(this)">
               <i class="fa-solid fa-circle" style="color: #2c3e50; font-size:6px"></i> Carbón
             </div>
+            <div class="chip active" data-value="Manganeso" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #8e44ad; font-size:6px"></i> Manganeso
+            </div>
+            <div class="chip active" data-value="Estaño" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #d35400; font-size:6px"></i> Estaño
+            </div>
+            <div class="chip active" data-value="Cesio" onclick="toggleChip(this)">
+              <i class="fa-solid fa-circle" style="color: #16a085; font-size:6px"></i> Cesio
+            </div>
           </div>
         </div>
       </div>
@@ -236,7 +264,9 @@
             <div class="chip active" data-value="Exploración avanzada" onclick="toggleChip(this)">Exploración</div>
             <div class="chip active" data-value="Evaluación económica preliminar" onclick="toggleChip(this)">Evaluación
             </div>
-            <div class="chip active" data-value="Mantenimiento" onclick="toggleChip(this)">Mantenimiento</div>
+            <div class="chip active" data-value="Cese de operaciones" onclick="toggleChip(this)">Cese operaciones</div>
+            <div class="chip active" data-value="Prospección" onclick="toggleChip(this)">Prospección</div>
+            <div class="chip active" data-value="Exploración inicial" onclick="toggleChip(this)">Expl. inicial</div>
           </div>
         </div>
       </div>
@@ -244,7 +274,7 @@
       <!-- Proximity Radius -->
       <div class="control-panel">
         <div class="panel-header" onclick="togglePanel(this)">
-          <h3><i class="fa-solid fa-bullseye"></i> Radio de Proximidad</h3>
+          <h3><i class="fa-solid fa-bullseye"></i> Radio de Análisis</h3>
           <i class="fa-solid fa-chevron-down toggle-icon"></i>
         </div>
         <div class="panel-body">
@@ -284,8 +314,8 @@
           <span class="label">Proyectos</span>
         </div>
         <div class="province-stat">
-          <span class="value" id="provinceInfoAlertas" style="color: var(--danger)">0</span>
-          <span class="label">Alertas</span>
+          <span class="value" id="provinceInfoAlertas" style="color: var(--info)">0</span>
+          <span class="label">En proximidad</span>
         </div>
         <button class="btn-close" onclick="clearProvinceFilter()"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -308,7 +338,7 @@
         <div class="metric-grid">
           <div class="metric-card glacier">
             <span class="metric-value" id="metricGlaciaresTotal">—</span>
-            <span class="metric-label">Glaciares</span>
+            <span class="metric-label">Amb. Glacial</span>
           </div>
           <div class="metric-card periglacial">
             <span class="metric-value" id="metricPeriglacialTotal">—</span>
@@ -318,9 +348,9 @@
             <span class="metric-value" id="metricMineriaTotal">—</span>
             <span class="metric-label">Proy. Mineros</span>
           </div>
-          <div class="metric-card danger">
+          <div class="metric-card info">
             <span class="metric-value" id="metricAlertasTotal">—</span>
-            <span class="metric-label">En zona glaciar</span>
+            <span class="metric-label">En proximidad</span>
           </div>
           <div class="metric-card info">
             <span class="metric-value" id="metricSupTotal">—</span>

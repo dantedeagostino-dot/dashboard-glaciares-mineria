@@ -80,7 +80,7 @@
             })
         }).addTo(map);
 
-        // Initialize layer groups — use MarkerCluster for glacier/periglacial (17,840 markers)
+        // Initialize layer groups — use MarkerCluster for glacier/periglacial (16,888 markers)
         glaciarLayer = L.markerClusterGroup({
             maxClusterRadius: 50,
             spiderfyOnMaxZoom: true,
@@ -284,11 +284,11 @@
         const minCount = MINERIA_DATA.filter(m => m.provincia === nombre).length;
         document.getElementById('provinceInfoMineria').textContent = minCount;
 
-        // Count alerts in this province
-        const alertCount = currentProximityData.filter(p =>
+        // Count proximity in this province
+        const proximityCount = currentProximityData.filter(p =>
             p.project.provincia === nombre && p.glaciersInRadius > 0
         ).length;
-        document.getElementById('provinceInfoAlertas').textContent = alertCount;
+        document.getElementById('provinceInfoAlertas').textContent = proximityCount;
     }
 
     // ── Filter Change Handler ──────────────────────
@@ -314,24 +314,24 @@
         updateAlerts(currentProximityData, state.proximityRadius);
 
         // Update counts
-        const alertCount = currentProximityData.filter(p => p.glaciersInRadius > 0).length;
+        const proximityCount = currentProximityData.filter(p => p.glaciersInRadius > 0).length;
         document.getElementById('countGlaciares').textContent = `${glaciarsOnly.length} puntos`;
         document.getElementById('countPeriglacial').textContent = `${periglacialOnly.length} puntos`;
         document.getElementById('countMineria').textContent = `${filteredMineria.length} proyectos`;
-        document.getElementById('countAlertas').textContent = `${alertCount} alertas`;
+        document.getElementById('countAlertas').textContent = `${proximityCount} en proximidad`;
 
         // Update header stats
         const aggStats = SpatialAnalysis.getAggregateStats(allGlaciares, filteredMineria, GLACIARES_STATS, state.proximityRadius);
         document.getElementById('statTotalGlaciares').textContent = aggStats.totalGeoformas.toLocaleString();
         document.getElementById('statSuperficie').textContent = aggStats.totalSuperficie.toLocaleString();
         document.getElementById('statProyectos').textContent = filteredMineria.length;
-        document.getElementById('statAlertas').textContent = alertCount;
+        document.getElementById('statAlertas').textContent = proximityCount;
 
         // Update metrics panel
         document.getElementById('metricGlaciaresTotal').textContent = aggStats.totalGlaciares.toLocaleString();
         document.getElementById('metricPeriglacialTotal').textContent = aggStats.totalPeriglacial.toLocaleString();
         document.getElementById('metricMineriaTotal').textContent = filteredMineria.length;
-        document.getElementById('metricAlertasTotal').textContent = alertCount;
+        document.getElementById('metricAlertasTotal').textContent = proximityCount;
         document.getElementById('metricSupTotal').textContent = aggStats.totalSuperficie.toLocaleString();
 
         // Build stats object for charts (filtered if province selected)
@@ -423,17 +423,16 @@
         });
     }
 
-    // ── Alert Rings ────────────────────────────────
+    // ── Proximity Rings ─────────────────────────────
     function updateAlerts(proximityData, radiusKm) {
         alertsLayer.clearLayers();
-        const alertProjects = proximityData.filter(p => p.glaciersInRadius > 0);
+        const nearbyProjects = proximityData.filter(p => p.glaciersInRadius > 0);
 
-        alertProjects.forEach(pd => {
-            const color = pd.risk === 'critical' ? '#ef4444' :
-                pd.risk === 'high' ? '#f59e0b' :
-                    '#3b82f6';
+        nearbyProjects.forEach(pd => {
+            // Neutral blue color for all proximity indicators
+            const color = '#3b82f6';
 
-            // Alert circle around mining project
+            // Proximity circle around mining project
             const circle = L.circle([pd.project.lat, pd.project.lng], {
                 radius: radiusKm * 1000,
                 color: color,
@@ -441,7 +440,7 @@
                 fillOpacity: 0.06,
                 weight: 1.5,
                 dashArray: '6, 4',
-                className: 'proximity-alert-ring'
+                className: 'proximity-indicator-ring'
             });
 
             circle.bindPopup(createAlertPopup(pd));
@@ -473,11 +472,11 @@
             ? `${nearest.glacier.nombre} (${nearest.distance_km} km)`
             : 'N/A';
 
-        let alertHtml = '';
+        let proximityHtml = '';
         if (nearest.distance_km <= Filters.state.proximityRadius) {
-            alertHtml = `
-        <div class="popup-alert">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+            proximityHtml = `
+        <div class="popup-alert" style="background: rgba(59,130,246,0.15); border-color: #3b82f6;">
+          <i class="fa-solid fa-location-dot" style="color: #3b82f6"></i>
           Proyecto minero a ${nearest.distance_km} km: ${nearest.glacier ? nearest.glacier.nombre : ''}
         </div>`;
         }
@@ -501,7 +500,7 @@
       ${slopeHtml}
       <div class="popup-row"><span class="label">Coordenadas</span><span class="value">${g.lat.toFixed(4)}, ${g.lng.toFixed(4)}</span></div>
       <div class="popup-row"><span class="label">Proy. minero cercano</span><span class="value">${nearestText}</span></div>
-      ${alertHtml}
+      ${proximityHtml}
     </div>`;
     }
 
@@ -513,12 +512,12 @@
 
         const glaciersNearby = SpatialAnalysis.findGlaciersInRadius(p, GLACIARES_DATA, Filters.state.proximityRadius);
 
-        let alertHtml = '';
+        let proximityHtml = '';
         if (glaciersNearby.length > 0) {
-            alertHtml = `
-        <div class="popup-alert">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-          ${glaciersNearby.length} glaciar(es) dentro de ${Filters.state.proximityRadius} km
+            proximityHtml = `
+        <div class="popup-alert" style="background: rgba(59,130,246,0.15); border-color: #3b82f6;">
+          <i class="fa-solid fa-location-dot" style="color: #3b82f6"></i>
+          ${glaciersNearby.length} geoforma(s) dentro de ${Filters.state.proximityRadius} km
         </div>`;
         }
 
@@ -530,7 +529,7 @@
       <div class="popup-row"><span class="label">Provincia</span><span class="value">${p.provincia}</span></div>
       <div class="popup-row"><span class="label">Coordenadas</span><span class="value">${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}</span></div>
       <div class="popup-row"><span class="label">Glaciar más cercano</span><span class="value">${nearestText}</span></div>
-      ${alertHtml}
+      ${proximityHtml}
     </div>`;
     }
 
@@ -540,14 +539,16 @@
             .join('<br>');
 
         return `<div class="popup-content">
-      <h4 style="color: var(--danger)"><i class="fa-solid fa-triangle-exclamation" style="margin-right:6px"></i>Alerta de Proximidad</h4>
+      <h4 style="color: #3b82f6"><i class="fa-solid fa-location-dot" style="margin-right:6px"></i>Análisis de Proximidad</h4>
       <div class="popup-row"><span class="label">Proyecto</span><span class="value">${pd.project.nombre}</span></div>
       <div class="popup-row"><span class="label">Mineral</span><span class="value" style="color: ${MINERAL_COLORS[pd.project.mineral] || '#fff'}">${pd.project.mineral}</span></div>
-      <div class="popup-row"><span class="label">Riesgo</span><span class="value" style="color: ${pd.risk === 'critical' ? '#ef4444' : pd.risk === 'high' ? '#f59e0b' : '#3b82f6'}">${pd.risk.toUpperCase()}</span></div>
-      <div class="popup-row"><span class="label">Distancia mínima</span><span class="value">${pd.nearestDistance} km</span></div>
-      <div class="popup-row"><span class="label">Glaciares en radio</span><span class="value">${pd.glaciersInRadius}</span></div>
+      <div class="popup-row"><span class="label">Proximidad</span><span class="value" style="color: #3b82f6">${pd.proximityCategory ? pd.proximityCategory.toUpperCase() : ''} (${pd.nearestDistance} km)</span></div>
+      <div class="popup-row"><span class="label">Geoformas en radio</span><span class="value">${pd.glaciersInRadius}</span></div>
       <div style="margin-top:8px; font-size:0.72rem; color: var(--text-muted)">
-        <strong>Glaciares cercanos:</strong><br>${glaciersList}
+        <strong>Geoformas cercanas:</strong><br>${glaciersList}
+      </div>
+      <div style="margin-top:6px; font-size:0.65rem; color: var(--text-muted); font-style:italic;">
+        Distancia lineal al cuerpo de hielo. No implica evaluación de riesgo ambiental.
       </div>
     </div>`;
     }

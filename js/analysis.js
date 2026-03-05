@@ -54,16 +54,17 @@ const SpatialAnalysis = {
 
     /**
      * Run full proximity analysis
-     * For each mining project, find nearest glacier and classify risk
+     * For each mining project, find nearest glacier and classify proximity
      */
     runProximityAnalysis(miningProjects, glaciers, radiusKm) {
         const results = [];
         for (const project of miningProjects) {
             const nearest = this.findNearestGlacier(project, glaciers);
             const inRadius = this.findGlaciersInRadius(project, glaciers, radiusKm);
-            const risk = nearest.distance_km <= 10 ? 'critical' :
-                nearest.distance_km <= 25 ? 'high' :
-                    nearest.distance_km <= 50 ? 'medium' : 'low';
+            // Neutral proximity categories (no risk connotation)
+            const proximityCategory = nearest.distance_km <= 10 ? 'inmediata' :
+                nearest.distance_km <= 25 ? 'cercana' :
+                    nearest.distance_km <= 50 ? 'media' : 'lejana';
 
             results.push({
                 project,
@@ -71,7 +72,7 @@ const SpatialAnalysis = {
                 nearestDistance: nearest.distance_km,
                 glaciersInRadius: inRadius.length,
                 glaciersInRadiusList: inRadius,
-                risk
+                proximityCategory
             });
         }
         return results.sort((a, b) => a.nearestDistance - b.nearestDistance);
@@ -158,7 +159,7 @@ const SpatialAnalysis = {
 
         // Proximity analysis
         const proximity = this.runProximityAnalysis(mineria, glaciares, radiusKm);
-        const alertCount = proximity.filter(p => p.glaciersInRadius > 0).length;
+        const proximityCount = proximity.filter(p => p.glaciersInRadius > 0).length;
 
         return {
             totalGeoformas,
@@ -166,7 +167,7 @@ const SpatialAnalysis = {
             totalGlaciares,
             totalPeriglacial,
             totalProyectos: mineria.length,
-            alertCount,
+            proximityCount,
             proximity
         };
     }
