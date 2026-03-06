@@ -7,8 +7,8 @@ const Filters = {
         provincia: '',
         tiposGlaciar: ['Glaciar', 'Ambiente Periglacial'],
         superficieMin: 0,
-        tiposProyecto: ['Metalífero', 'No Metalífero'],
-        minerales: ['Cobre', 'Oro', 'Plata', 'Litio', 'Uranio', 'Potasio', 'Hierro', 'Plomo', 'Carbón', 'Au aluvional', 'Manganeso', 'Estaño', 'Cesio', 'Arena', 'Suelos seleccionados/tosca/greda', 'Triturados pétreos', 'Arcillas', 'Granito', 'Feldespato', 'Turba', 'Caliza', 'Dolomía', 'Yeso', 'Cloruro de sodio', 'Conchilla y/o coquina', 'Arenas silíceas', 'Cuarcita', 'Boratos (B2O3)', 'Cuarzo', 'Elementos de Tierras Raras (óxidos) (REE)', 'Piedra laja', 'Pórfido', 'Perlita', 'Granulado volcánico', 'Asfaltita', 'Baritina', 'Sulfato de sodio', 'Basalto', 'Fluorita', 'Serpentinita', 'Carbonato de calcio', 'Pirofilita', 'Conglomerado calcáreo', 'Mica', 'Nb (óxido)', 'Relaves', 'Zeolita', 'Grafito'],
+        tiposProyecto: ['Metalífero'],
+        minerales: ['Cobre', 'Oro', 'Plata', 'Litio', 'Uranio', 'Potasio', 'Hierro', 'Plomo', 'Carbón', 'Au aluvional', 'Manganeso', 'Estaño', 'Cesio'],
         etapas: ['Producción', 'Construcción', 'Factibilidad', 'Prefactibilidad', 'Exploración avanzada', 'Evaluación económica preliminar', 'Prospección', 'Exploración inicial', 'Cese de operaciones', 'Proceso de Cierre'],
         proximityRadius: 25,
     },
@@ -84,8 +84,8 @@ const Filters = {
         this.state.provincia = '';
         this.state.tiposGlaciar = ['Glaciar', 'Ambiente Periglacial'];
         this.state.superficieMin = 0;
-        this.state.tiposProyecto = ['Metalífero', 'No Metalífero'];
-        this.state.minerales = ['Cobre', 'Oro', 'Plata', 'Litio', 'Uranio', 'Potasio', 'Hierro', 'Plomo', 'Carbón', 'Au aluvional', 'Manganeso', 'Estaño', 'Cesio', 'Arena', 'Suelos seleccionados/tosca/greda', 'Triturados pétreos', 'Arcillas', 'Granito', 'Feldespato', 'Turba', 'Caliza', 'Dolomía', 'Yeso', 'Cloruro de sodio', 'Conchilla y/o coquina', 'Arenas silíceas', 'Cuarcita', 'Boratos (B2O3)', 'Cuarzo', 'Elementos de Tierras Raras (óxidos) (REE)', 'Piedra laja', 'Pórfido', 'Perlita', 'Granulado volcánico', 'Asfaltita', 'Baritina', 'Sulfato de sodio', 'Basalto', 'Fluorita', 'Serpentinita', 'Carbonato de calcio', 'Pirofilita', 'Conglomerado calcáreo', 'Mica', 'Nb (óxido)', 'Relaves', 'Zeolita', 'Grafito'];
+        this.state.tiposProyecto = ['Metalífero'];
+        this.state.minerales = ['Cobre', 'Oro', 'Plata', 'Litio', 'Uranio', 'Potasio', 'Hierro', 'Plomo', 'Carbón', 'Au aluvional', 'Manganeso', 'Estaño', 'Cesio'];
         this.state.etapas = ['Producción', 'Construcción', 'Factibilidad', 'Prefactibilidad', 'Exploración avanzada', 'Evaluación económica preliminar', 'Prospección', 'Exploración inicial', 'Cese de operaciones', 'Proceso de Cierre'];
         this.state.proximityRadius = 25;
 
