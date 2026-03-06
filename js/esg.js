@@ -23,22 +23,36 @@
             'Certificado': '#2ecc71',
             'En implementación': '#f39c12',
             'En cierre — no aplica': '#95a5a6',
+            'En cierre — cerrado sept. 2024': '#95a5a6',
+            'Sin información': '#666',
         };
 
+        const fmt = (v, suffix) => v != null ? v.toLocaleString('es-AR') + (suffix || '') : '—';
+        const fmtM = v => v != null ? `USD ${v.toFixed(1)}M` : '—';
+
         tbody.innerHTML = ESG_DATA.map(p => {
-            const regalias = p.regalias_provinciales_usd
-                ? `USD ${(p.regalias_provinciales_usd / 1e6).toFixed(1)}M`
-                : '—';
+            const impuestos = fmtM(p.impuestos_total_usd_2023);
+            const regalias = fmtM(p.regalias_usd_2023);
+            const agua = fmt(p.consumo_agua_m3);
+            const energia = fmt(p.consumo_energia_mwh);
+            const gei = fmt(p.emisiones_gei_tco2e);
+            const empleo = fmt(p.empleo_directo);
+            const mujeres = p.porcentaje_mujeres_pct != null ? p.porcentaje_mujeres_pct + '%' : '—';
+
             const tsm = p.tsm_status || '—';
             const color = tsmColor[tsm] || '#aaa';
             const badge = `<span class="tsm-badge" style="background:${color}20;color:${color};border-color:${color}40">${tsm}</span>`;
 
             return `
                 <tr>
-                    <td><strong>${p.proyecto}</strong><br><small>${p.provincia}</small></td>
+                    <td><strong>${p.proyecto}</strong><br><small>${p.provincia} · ${p.mineral}</small></td>
+                    <td>${impuestos}</td>
                     <td>${regalias}</td>
-                    <td>${(p.empleo_directo || 0).toLocaleString('es-AR')}</td>
-                    <td>${p.porcentaje_mujeres_pct || '—'}%</td>
+                    <td>${agua}</td>
+                    <td>${energia}</td>
+                    <td>${gei}</td>
+                    <td>${empleo}</td>
+                    <td>${mujeres}</td>
                     <td>${badge}</td>
                 </tr>
             `;

@@ -2092,3 +2092,132 @@ body {
   padding: 20px;
   font-size: 0.85rem;
 }
+
+/* ── ESG Section ────────────────────────────────── */
+
+/* KPI Grid */
+.esg-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.esg-kpi-card {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 16px 14px;
+  text-align: center;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.esg-kpi-card:hover {
+  border-color: var(--border-active);
+  transform: translateY(-2px);
+}
+
+.esg-kpi-card.esg-highlight {
+  border-color: var(--mining-primary);
+  background: var(--mining-glow);
+}
+
+.esg-kpi-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.2;
+}
+
+.esg-highlight .esg-kpi-value {
+  color: var(--mining-primary);
+}
+
+.esg-kpi-label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  line-height: 1.3;
+}
+
+/* ESG Project Table */
+.esg-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -8px;
+  padding: 0 8px;
+}
+
+.esg-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.esg-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 8px;
+  border-bottom: 2px solid var(--border-subtle);
+  white-space: nowrap;
+  text-align: left;
+}
+
+.esg-table thead th i {
+  margin-right: 3px;
+  font-size: 0.68rem;
+  opacity: 0.7;
+}
+
+.esg-table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.15s;
+}
+
+.esg-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.esg-table td {
+  padding: 10px 8px;
+  color: var(--text-primary);
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.esg-table td:first-child {
+  white-space: normal;
+  min-width: 140px;
+  max-width: 200px;
+}
+
+.esg-table td:first-child strong {
+  color: var(--text-accent);
+  font-weight: 600;
+}
+
+.esg-table td:first-child small {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+/* TSM Badge */
+.tsm-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  border: 1px solid;
+  white-space: nowrap;
+}
