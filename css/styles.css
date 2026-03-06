@@ -1936,6 +1936,59 @@ body {
   cursor: pointer;
 }
 
+.capmin-filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.capmin-search {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.capmin-search::placeholder {
+  color: var(--text-muted);
+}
+
+.capmin-search:focus {
+  border-color: var(--glacier-primary);
+  box-shadow: 0 0 0 2px var(--glacier-glow);
+}
+
+.capmin-select {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  min-width: 160px;
+  cursor: pointer;
+}
+
+.capmin-select:focus {
+  border-color: var(--glacier-primary);
+  box-shadow: 0 0 0 2px var(--glacier-glow);
+}
+
+.capmin-select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+
 .capmin-list {
   display: flex;
   flex-direction: column;
