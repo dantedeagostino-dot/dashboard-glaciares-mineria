@@ -589,21 +589,21 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <!-- Data -->
-  <script src="data/glaciares.js"></script>
-  <script src="data/mineria.js"></script>
-  <script src="data/provincias.js"></script>
+  <!-- Data (deferred — loads in parallel, executes in order after HTML parsed) -->
+  <script src="data/glaciares.js" defer></script>
+  <script src="data/mineria.js" defer></script>
+  <script src="data/provincias.js" defer></script>
 
-  <!-- App Modules -->
-  <script src="js/analysis.js"></script>
-  <script src="js/charts.js"></script>
-  <script src="js/filters.js"></script>
-  <script src="data/litio.js"></script>
-  <script src="data/esg.js"></script>
-  <script src="data/capmin.js"></script>
-  <script src="js/esg.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/chat.js"></script>
+  <!-- App Modules (deferred) -->
+  <script src="js/analysis.js" defer></script>
+  <script src="js/charts.js" defer></script>
+  <script src="js/filters.js" defer></script>
+  <script src="data/litio.js" defer></script>
+  <script src="data/esg.js" defer></script>
+  <script src="data/capmin.js" defer></script>
+  <script src="js/esg.js" defer></script>
+  <script src="js/app.js" defer></script>
+  <script src="js/chat.js" defer></script>
 
 </body>
 

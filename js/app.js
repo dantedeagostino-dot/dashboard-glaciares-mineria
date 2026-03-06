@@ -14,6 +14,11 @@
     let currentProximityData = [];
     let currentMineralAnalysis = {};
 
+    // ── Popup Proximity Caches (pre-computed per filter change) ──
+    let _glacierNearestProject = new Map();  // glacierKey -> { project, distance_km }
+    let _miningNearestGlacier = new Map();   // miningKey -> { glacier, distance_km }
+    let _miningGlaciersInRadius = new Map(); // miningKey -> glaciersInRadius[]
+
     // ── Initialize ─────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
         initMap();
@@ -305,10 +310,32 @@
         updatePeriglacialMarkers(periglacialOnly);
         updateMineriaMarkers(filteredMineria);
 
-        // Run spatial analysis
+        // Clear spatial analysis caches for new filter state
+        SpatialAnalysis.clearCache();
+
+        // Run spatial analysis (ONCE — reused below)
         const allGlaciares = filteredGlaciares;
         currentProximityData = SpatialAnalysis.runProximityAnalysis(filteredMineria, allGlaciares, state.proximityRadius);
         currentMineralAnalysis = SpatialAnalysis.mineralInGlacierZones(allGlaciares, filteredMineria, state.proximityRadius);
+
+        // ── Pre-compute popup lookup maps ──
+        // Mining nearest glacier + glaciers in radius (from proximity data)
+        _miningNearestGlacier.clear();
+        _miningGlaciersInRadius.clear();
+        for (const pd of currentProximityData) {
+            const key = `${pd.project.lat},${pd.project.lng}`;
+            _miningNearestGlacier.set(key, { glacier: pd.nearestGlacier, distance_km: pd.nearestDistance });
+            _miningGlaciersInRadius.set(key, pd.glaciersInRadiusList || []);
+        }
+
+        // Glacier nearest mining project (from mineral analysis details)
+        _glacierNearestProject.clear();
+        if (currentMineralAnalysis.details) {
+            for (const d of currentMineralAnalysis.details) {
+                const key = `${d.glacier.lat},${d.glacier.lng}`;
+                _glacierNearestProject.set(key, { project: d.nearestMiningProject, distance_km: d.distance_km });
+            }
+        }
 
         // Update alerts
         updateAlerts(currentProximityData, state.proximityRadius);
@@ -320,8 +347,8 @@
         document.getElementById('countMineria').textContent = `${filteredMineria.length} proyectos`;
         document.getElementById('countAlertas').textContent = `${proximityCount} en proximidad`;
 
-        // Update header stats
-        const aggStats = SpatialAnalysis.getAggregateStats(allGlaciares, filteredMineria, GLACIARES_STATS, state.proximityRadius);
+        // Update header stats — pass pre-computed proximity to avoid duplicate calculation
+        const aggStats = SpatialAnalysis.getAggregateStats(allGlaciares, filteredMineria, GLACIARES_STATS, state.proximityRadius, currentProximityData);
         document.getElementById('statTotalGlaciares').textContent = aggStats.totalGeoformas.toLocaleString();
         document.getElementById('statSuperficie').textContent = aggStats.totalSuperficie.toLocaleString();
         document.getElementById('statProyectos').textContent = filteredMineria.length;
@@ -462,22 +489,21 @@
         });
     }
 
-    // ── Popup Builders ─────────────────────────────
+    // ── Popup Builders (use pre-computed caches) ───
     function createGlacierPopup(g) {
-        const nearest = SpatialAnalysis.findNearestGlacier(
-            { lat: g.lat, lng: g.lng },
-            MINERIA_DATA
-        );
-        const nearestText = nearest.glacier
-            ? `${nearest.glacier.nombre} (${nearest.distance_km} km)`
+        // O(1) cache lookup instead of O(n) scan
+        const key = `${g.lat},${g.lng}`;
+        const cached = _glacierNearestProject.get(key);
+        const nearestText = cached && cached.project
+            ? `${cached.project.nombre} (${cached.distance_km} km)`
             : 'N/A';
 
         let proximityHtml = '';
-        if (nearest.distance_km <= Filters.state.proximityRadius) {
+        if (cached && cached.distance_km <= Filters.state.proximityRadius) {
             proximityHtml = `
         <div class="popup-alert" style="background: rgba(59,130,246,0.15); border-color: #3b82f6;">
           <i class="fa-solid fa-location-dot" style="color: #3b82f6"></i>
-          Proyecto minero a ${nearest.distance_km} km: ${nearest.glacier ? nearest.glacier.nombre : ''}
+          Proyecto minero a ${cached.distance_km} km: ${cached.project.nombre}
         </div>`;
         }
 
@@ -505,19 +531,21 @@
     }
 
     function createMiningPopup(p) {
-        const nearest = SpatialAnalysis.findNearestGlacier(p, GLACIARES_DATA);
-        const nearestText = nearest.glacier
-            ? `${nearest.glacier.nombre} (${nearest.distance_km} km)`
+        // O(1) cache lookup instead of O(n) scan
+        const key = `${p.lat},${p.lng}`;
+        const cachedNearest = _miningNearestGlacier.get(key);
+        const cachedInRadius = _miningGlaciersInRadius.get(key) || [];
+
+        const nearestText = cachedNearest && cachedNearest.glacier
+            ? `${cachedNearest.glacier.nombre} (${cachedNearest.distance_km} km)`
             : 'N/A';
 
-        const glaciersNearby = SpatialAnalysis.findGlaciersInRadius(p, GLACIARES_DATA, Filters.state.proximityRadius);
-
         let proximityHtml = '';
-        if (glaciersNearby.length > 0) {
+        if (cachedInRadius.length > 0) {
             proximityHtml = `
         <div class="popup-alert" style="background: rgba(59,130,246,0.15); border-color: #3b82f6;">
           <i class="fa-solid fa-location-dot" style="color: #3b82f6"></i>
-          ${glaciersNearby.length} geoforma(s) dentro de ${Filters.state.proximityRadius} km
+          ${cachedInRadius.length} geoforma(s) dentro de ${Filters.state.proximityRadius} km
         </div>`;
         }
 

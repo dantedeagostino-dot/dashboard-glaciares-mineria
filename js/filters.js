@@ -14,15 +14,19 @@ const Filters = {
     },
 
     listeners: [],
+    _debounceTimer: null,
 
     /** Register callback for filter changes */
     onChange(callback) {
         this.listeners.push(callback);
     },
 
-    /** Notify all listeners */
+    /** Notify all listeners (debounced 150ms to prevent rapid-fire recalculations) */
     _notify() {
-        this.listeners.forEach(cb => cb(this.state));
+        clearTimeout(this._debounceTimer);
+        this._debounceTimer = setTimeout(() => {
+            this.listeners.forEach(cb => cb(this.state));
+        }, 150);
     },
 
     /** Initialize filter event listeners */
