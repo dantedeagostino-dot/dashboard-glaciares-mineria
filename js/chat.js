@@ -681,15 +681,24 @@
             ].join('\n');
         }
 
-        // 9. ESG
+        // 9. ESG — Updated for SIACAM 2023 expanded data
         let esgContextData = '';
         if (typeof ESG_DATA !== 'undefined') {
             const tsm = typeof TSM_INFO !== 'undefined' ? TSM_INFO : {};
             const tot = typeof ESG_TOTALES !== 'undefined' ? ESG_TOTALES : {};
             esgContextData = [
                 `TSM en Argentina: adoptado por CAEM en ${tsm.año_adopcion || 2016} | 1ra certificada: ${tsm.primera_mina_certificada || 'Veladero'} (${tsm.año_primera_certificacion || 2023})`,
-                `Regalías: ~USD ${((tot.regalias_provinciales_total_usd || 0) / 1e6).toFixed(0)}M/año | Empleo directo: ${(tot.empleo_directo_total || 0).toLocaleString()} | Mujeres: ${tot.porcentaje_mujeres_sector_pct || 11}%`,
-                ESG_DATA.map(e => `${e.proyecto}|${e.empresa}|${e.provincia}|USD ${((e.regalias_provinciales_usd || 0) / 1e6).toFixed(1)}M|${e.empleo_directo} empleados|${e.porcentaje_mujeres_pct}% mujeres|TSM:${e.tsm_status}`).join('\n'),
+                `Pagos fiscales 18 empresas (2023): USD ${tot.impuestos_total_18_empresas_usd || 637}M | Regalías sector: ~USD ${((tot.regalias_sector_total_usd || 0) / 1e6).toFixed(0)}M/año | Empleo directo: ${(tot.empleo_directo_total || 0).toLocaleString()} | Mujeres: ${tot.porcentaje_mujeres_sector_pct || 11}%`,
+                `Inversiones anunciadas desde dic-2019: USD ${((tot.inversiones_anunciadas_acum_usd || 0) / 1e9).toFixed(1)}B`,
+                `[INDICADORES POR PROYECTO (proyecto|empresa|provincia|impuestos_2023|regalias_2023|agua_m3|energia_mwh|gei_tco2e|empleo|%mujeres|TSM)]:`,
+                ESG_DATA.map(e => {
+                    const imp = e.impuestos_total_usd_2023 != null ? `USD ${e.impuestos_total_usd_2023}M` : 'N/D';
+                    const reg = e.regalias_usd_2023 != null ? `USD ${e.regalias_usd_2023}M` : 'N/D';
+                    const agua = e.consumo_agua_m3 != null ? `${e.consumo_agua_m3.toLocaleString()}m³` : 'N/D';
+                    const energia = e.consumo_energia_mwh != null ? `${e.consumo_energia_mwh.toLocaleString()}MWh` : 'N/D';
+                    const gei = e.emisiones_gei_tco2e != null ? `${e.emisiones_gei_tco2e.toLocaleString()}tCO2e` : 'N/D';
+                    return `${e.proyecto}|${e.empresa}|${e.provincia}|${imp}|${reg}|${agua}|${energia}|${gei}|${e.empleo_directo || 'N/D'}emp|${e.porcentaje_mujeres_pct != null ? e.porcentaje_mujeres_pct + '%' : 'N/D'}|TSM:${e.tsm_status}`;
+                }).join('\n'),
             ].join('\n');
         }
 

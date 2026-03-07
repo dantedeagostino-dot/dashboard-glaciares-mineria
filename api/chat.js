@@ -63,8 +63,12 @@ ${context?.litioEspecializado || 'Argentina: 2° en reservas globales de litio (
 ═══════════════════════════════════════════
 
 ═══════════════════════════════════════════
-ESG — INDICADORES DE SOSTENIBILIDAD (EITI / TSM / SIPA):
-${context?.esgIndicadores || 'TSM adoptado por CAEM en 2016. Veladero: primera mina certificada TSM en Argentina (2023). Empleo directo sectorial: ~27.500 trabajadores. Regalías provinciales estimadas: ~USD 210M/año.'}
+ESG — INDICADORES DE SOSTENIBILIDAD (SIACAM 2023 / EITI / TSM):
+18 operaciones principales con datos oficiales SIACAM:
+- Pagos fiscales 2023 en USD por empresa (Impuesto a Ganancias, Derechos de Exportación, Seg. Social, Regalías)
+- Indicadores ambientales: consumo de agua (m³), energía (MWh), emisiones GEI (tCO2e) por proyecto
+- TSM status, empleo directo, porcentaje mujeres
+${context?.esgIndicadores || 'TSM adoptado por CAEM en 2016. Veladero: primera mina certificada TSM en Argentina (2023). Pagos fiscales 18 empresas: USD 637M (2023). Inversiones anunciadas desde dic-2019: USD 23.1B.'}
 ═══════════════════════════════════════════
 
 ═══════════════════════════════════════════
@@ -104,6 +108,8 @@ INSTRUCCIONES:
 - Si tenés historial de conversación, considerá el contexto previo para dar respuestas coherentes.
 - Para preguntas de retracción o cambio climático, usá los datos de la Resolución 142/2024.
 - Podés hacer análisis combinados (glaciares + minería + ESG + litio + proveedores).
+- Para preguntas sobre impuestos, regalías o contribución fiscal, usá los datos SIACAM 2023 por empresa.
+- Para preguntas sobre impacto ambiental, usá consumo de agua (m³), energía (MWh) y emisiones GEI (tCO2e) de cada proyecto. Hacé comparaciones entre proyectos.
 - Para preguntas sobre ríos o recursos hídricos, usá los datos de CUENCAS HIDROGRÁFICAS.
 - Citá la Ley 26.639 y otras normas cuando sea relevante a preguntas legales o de conflicto.
 - **GRÁFICOS**: Cuando tu respuesta incluye datos comparativos (≥3 items numéricos), SIEMPRE incluí un bloque de gráfico con este formato exacto:
