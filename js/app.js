@@ -19,18 +19,37 @@
     let _miningNearestGlacier = new Map();   // miningKey -> { glacier, distance_km }
     let _miningGlaciersInRadius = new Map(); // miningKey -> glaciersInRadius[]
 
+    // ── Loading overlay helpers ──────────────────────
+    function setLoadingText(msg) {
+        const el = document.querySelector('.loading-text');
+        if (el) el.textContent = msg;
+    }
+    function hideOverlay() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.classList.add('fade-out');
+            setTimeout(() => overlay.style.display = 'none', 600);
+        }
+    }
+
     // ── Initialize ─────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
+        setLoadingText('Inicializando mapa…');
         initMap();
         DashboardCharts.init();
         Filters.init();
         Filters.onChange(onFilterChange);
-        loadAllData();
-        setTimeout(() => {
-            const overlay = document.getElementById('loadingOverlay');
-            overlay.classList.add('fade-out');
-            setTimeout(() => overlay.style.display = 'none', 600);
-        }, 800);
+
+        // Defer heavy data processing so the map + overlay render first
+        setLoadingText('Procesando datos glaciares y mineros…');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                loadAllData();
+                setLoadingText('Renderizando capas…');
+                // Allow one more paint before hiding
+                requestAnimationFrame(() => hideOverlay());
+            });
+        });
     });
 
     // ── Map Setup ──────────────────────────────────
