@@ -1,5 +1,5 @@
 # 🏔️ Dashboard de Glaciares & Minería de Argentina
-### Guía del Usuario — v2.0
+### Guía del Usuario — v3.0
 **Powered by [ColossusLab.tech](https://colossuslab.tech)** · *Marzo 2026*
 
 ---
@@ -8,31 +8,35 @@
 
 1. [¿Qué es esta plataforma?](#qué-es-esta-plataforma)
 2. [Requisitos y acceso](#requisitos-y-acceso)
-3. [Anatomía de la interfaz](#anatomía-de-la-interfaz)
-4. [El mapa interactivo](#el-mapa-interactivo)
-5. [Capas del mapa (7 capas)](#capas-del-mapa)
-6. [Panel de filtros](#panel-de-filtros)
-7. [Paneles de datos (4 pestañas)](#paneles-de-datos)
-8. [Análisis de proximidad](#análisis-de-proximidad)
-9. [ColossusAI — El asistente inteligente](#colossusai--el-asistente-inteligente)
-10. [Las bases de datos](#las-bases-de-datos)
-11. [Navegación móvil](#navegación-móvil)
-12. [Fuentes de datos oficiales](#fuentes-de-datos-oficiales)
-13. [Preguntas frecuentes](#preguntas-frecuentes)
+3. [Arquitectura técnica](#arquitectura-técnica)
+4. [Anatomía de la interfaz](#anatomía-de-la-interfaz)
+5. [El mapa interactivo](#el-mapa-interactivo)
+6. [Capas del mapa (7 capas)](#capas-del-mapa)
+7. [Panel de filtros](#panel-de-filtros)
+8. [Paneles de datos (4 pestañas)](#paneles-de-datos)
+9. [Análisis de proximidad](#análisis-de-proximidad)
+10. [ColossusAI — El asistente inteligente](#colossusai--el-asistente-inteligente)
+11. [Las bases de datos](#las-bases-de-datos)
+12. [Navegación móvil](#navegación-móvil)
+13. [Seguridad](#seguridad)
+14. [Despliegue y hosting](#despliegue-y-hosting)
+15. [Fuentes de datos oficiales](#fuentes-de-datos-oficiales)
+16. [Preguntas frecuentes](#preguntas-frecuentes)
 
 ---
 
 ## ¿Qué es esta plataforma?
 
-El **Dashboard de Glaciares & Minería** es una herramienta de inteligencia geoespacial que permite explorar, filtrar y cruzar cinco grandes repositorios de datos de Argentina en una misma interfaz:
+El **Dashboard de Glaciares & Minería** es una herramienta de inteligencia geoespacial que permite explorar, filtrar y cruzar seis grandes repositorios de datos de Argentina en una misma interfaz:
 
 | Módulo | Datos | Fuente oficial |
 |--------|-------|----------------|
-| 🏔️ **Glaciares** | 16.888 geoformas · 2.718,9 km² de hielo | IANIGLA / CONICET |
+| 🏔️ **Glaciares** | 16.968 geoformas · ~8.484 km² de hielo | IANIGLA / CONICET |
 | ⛏️ **Minería** | 906 proyectos (metalíferos + no metalíferos) en 23 provincias | SIACAM · datos.gob.ar |
 | 🔋 **Litio** | Yacimientos, reservas, capacidad, proyecciones | USGS / Benchmark Mineral |
-| 📊 **ESG** | Regalías EITI, empleos SIPA, certificaciones TSM | EITI Argentina / CAEM |
+| 📊 **ESG** | Pagos fiscales, regalías, empleo, agua, energía, GEI, TSM | EITI / SIACAM 2023 / CAEM |
 | 🏭 **CAPMIN** | 180+ proveedores mineros por rubro y provincia | capmin.com.ar |
+| ⚖️ **Marco Legal** | Ley 26.639, Ley 24.585, Resolución 142/2024 | Congreso Nacional / Sec. de Minería |
 
 > [!IMPORTANT]
 > **La plataforma no requiere instalación.** Funciona en cualquier navegador moderno (Chrome, Firefox, Edge, Safari).
@@ -52,6 +56,54 @@ El **Dashboard de Glaciares & Minería** es una herramienta de inteligencia geoe
 
 ---
 
+## Arquitectura técnica
+
+El dashboard es una **aplicación estática single-page** desplegada en Vercel, con un solo endpoint serverless para el chatbot de IA.
+
+### Stack tecnológico
+
+| Componente | Tecnología |
+|------------|------------|
+| **Frontend** | HTML5 + Vanilla CSS + JavaScript (ES6+, módulos IIFE) |
+| **Mapas** | Leaflet.js 1.9.4 + MarkerCluster |
+| **Gráficos** | Chart.js 4.4.1 |
+| **Iconografía** | Font Awesome 6.5.1 |
+| **Estilos** | Design system propio: dark-mode, glassmorphism, custom CSS variables |
+| **Backend IA** | Vercel Serverless Function (Node.js) con `@google/generative-ai` |
+| **Modelo IA** | Google Gemini 2.5 Flash |
+| **Hosting** | Vercel (con headers de seguridad y analytics integrados) |
+
+### Estructura de archivos
+
+```
+Dashboard mineria/
+├── index.html                  # Punto de entrada SPA
+├── css/
+│   └── styles.css              # Design system completo (~2.200 líneas)
+├── js/
+│   ├── app.js                  # Módulo principal: mapa, capas, marcadores, popups
+│   ├── analysis.js             # Motor de análisis espacial con índice de grilla
+│   ├── charts.js               # Gráficos Chart.js (barras, comparativos)
+│   ├── filters.js              # Lógica de filtrado reactivo (chips, selects, sliders)
+│   ├── esg.js                  # Panel de sostenibilidad + directorio CAPMIN
+│   └── chat.js                 # Interfaz de ColossusAI (v3.0: Markdown, gráficos inline)
+├── data/
+│   ├── glaciares.js            # ~6 MB — 16.968 geoformas con coordenadas
+│   ├── mineria.js              # 906 proyectos mineros con metadata
+│   ├── provincias.js           # Polígonos provinciales (12 provincias cordilleranas)
+│   ├── litio.js                # Módulo especializado de litio
+│   ├── esg.js                  # 18 operaciones con indicadores SIACAM 2023
+│   ├── capmin.js               # 180+ proveedores CAPMIN
+│   ├── glaciares_polygons.geojson  # Contornos reales IANIGLA (~5.7 MB)
+│   └── provincias_real.geojson     # Polígonos provinciales detallados (~13 MB)
+├── api/
+│   └── chat.js                 # Serverless function: Gemini + contexto del dashboard
+├── vercel.json                 # Config de deploy: headers CSP y seguridad
+└── package.json                # Dependencia: @google/generative-ai
+```
+
+---
+
 ## Anatomía de la interfaz
 
 La plataforma tiene un diseño de **tres columnas** en escritorio:
@@ -59,7 +111,7 @@ La plataforma tiene un diseño de **tres columnas** en escritorio:
 ```
 ┌──────────────────────────────────────────────────────┐
 │                    ENCABEZADO                         │
-│  🏔️ Glaciares & Minería  [16,888] [2,719] [906] [0] │
+│  🏔️ Glaciares & Minería  [16,968] [8,484] [82] [0]  │
 ├──────────┬──────────────────────┬────────────────────┤
 │          │                      │                    │
 │ SIDEBAR  │        MAPA          │   PANELES          │
@@ -82,8 +134,8 @@ El encabezado muestra **4 KPIs en tiempo real** que se actualizan con cada filtr
 |-----|-------------|-------|
 | **Geoformas Totales** | Total de glaciares + ambientes periglaciales cargados | 🔵 Celeste |
 | **km² Glaciares** | Superficie total de hielo de los glaciares filtrados | 🔵 Azul |
-| **Proyectos Mineros** | Total de proyectos mineros visibles | 🟠 Naranja |
-| **Indicadores Proximidad** | Proyectos dentro del radio configurado de un glaciar | 🔵 Azul |
+| **Proy. Metalíferos** | Total de proyectos mineros metalíferos visibles | 🟠 Naranja |
+| **En Proximidad** | Proyectos dentro del radio configurado de un glaciar | 🔵 Azul |
 
 ---
 
@@ -107,10 +159,11 @@ Al hacer click en un marcador se despliega un popup con datos específicos:
 
 **Popup de Glaciar:**
 - Nombre del glaciar o geoforma
-- Tipo (Glaciar / Ambiente Periglacial)
+- Tipo (Amb. Glacial / Amb. Periglacial)
 - Superficie en km²
 - Cuenca hídrica asociada
 - Altitud y provincia
+- Proyecto minero más cercano y distancia (pre-calculada)
 
 **Popup de Proyecto Minero:**
 - Nombre del proyecto
@@ -118,6 +171,8 @@ Al hacer click en un marcador se despliega un popup con datos específicos:
 - Mineral principal
 - Etapa actual (Producción, Exploración, etc.)
 - Provincia y coordenadas
+- Glaciar más cercano y distancia (pre-calculada)
+- Cantidad de glaciares dentro del radio configurado
 
 ### Barra informativa de provincia
 
@@ -131,7 +186,7 @@ Al hacer click en una provincia del mapa, aparece una **barra superior translúc
 
 ### Clustering de marcadores
 
-Cuando el mapa tiene un zoom alejado, los marcadores se **agrupan automáticamente** en clusters con números que indican la cantidad de puntos contenidos. Al hacer zoom, los clusters se despliegan mostrando los marcadores individuales.
+Cuando el mapa tiene un zoom alejado, los marcadores se **agrupan automáticamente** en clusters con números que indican la cantidad de puntos contenidos. Al hacer zoom, los clusters se despliegan mostrando los marcadores individuales. Se utilizan clusters separados para glaciares/periglaciales y para proyectos mineros.
 
 ---
 
@@ -141,24 +196,26 @@ El dashboard ofrece **7 capas** que se activan/desactivan desde el panel lateral
 
 | # | Capa | Descripción | Estado por defecto |
 |---|------|-------------|-------------------|
-| 1 | 🔵 **Glaciares** | Puntos azules escalados por superficie | ✅ Activa |
-| 2 | 🟣 **Ambiente Periglacial** | Ambientes periglaciales y permafrost | ✅ Activa |
+| 1 | 🔵 **Amb. Glacial** | Puntos azules escalados por superficie | ✅ Activa |
+| 2 | 🟣 **Amb. Periglacial** | Ambientes periglaciales y permafrost | ✅ Activa |
 | 3 | 🟠 **Proyectos Mineros** | Puntos de colores según mineral | ✅ Activa |
-| 4 | 🔵 **Indicadores de Proximidad** | Proyectos dentro del radio de glaciares | ✅ Activa |
+| 4 | 🔴 **Indicadores de Proximidad** | Proyectos dentro del radio de glaciares | ✅ Activa |
 | 5 | 🗺️ **Polígonos Glaciares** | Contornos reales IANIGLA (GeoJSON) | ⬜ Opcional |
 | 6 | 🧊 **Geología SIGAM** | Unidades geológicas SEGEMAR (WMS) | ⬜ Opcional |
 | 7 | 🟢 **Límites provinciales** | Contornos de las 12 provincias cordilleranas | ✅ Activa |
 
 ### Capa de polígonos glaciares
 
-Los polígonos represetan los **contornos reales** de los glaciares según el Inventario Nacional (IANIGLA). Están coloreados por tipo geomorfológico:
+Los polígonos representan los **contornos reales** de los glaciares según el Inventario Nacional (IANIGLA). Están coloreados por tipo geomorfológico:
 
-| Tipo | Color |
-|------|-------|
-| Glaciar de escombros | 🟤 Marrón |
-| Glaciar descubierto | 🔵 Azul celeste |
-| Glaciar cubierto | 🟢 Verde azulado |
-| Manchón de nieve | ⚪ Blanco |
+| Código | Tipo | Color |
+|--------|------|-------|
+| GD | Glaciar Descubierto | 🔵 Cian |
+| GC | Glaciar Cubierto | 🔵 Azul |
+| GCGE | Glaciar Cubierto / Geoforma Periglaciar | 🟡 Amarillo |
+| GEA | Geoforma de Ambiente Glaciar | 🟢 Verde |
+| GEI | Geoforma de Ambiente Periglacial | 🟠 Naranja |
+| MN | Manchón de Nieve | ⚪ Blanco |
 
 ### Capa SIGAM (Geología de SEGEMAR)
 
@@ -168,7 +225,7 @@ Esta capa WMS superpone las **unidades geológicas oficiales** del Sistema de In
 
 ## Panel de filtros
 
-El panel lateral izquierdo contiene **5 grupos de filtros** interactivos. Cada filtro actualiza en tiempo real el mapa, los gráficos y las estadísticas del encabezado.
+El panel lateral izquierdo contiene **6 grupos de filtros** interactivos. Cada filtro actualiza en tiempo real el mapa, los gráficos y las estadísticas del encabezado.
 
 ### 1. Provincia
 
@@ -178,23 +235,17 @@ Jujuy, Salta, Tucumán, Catamarca, La Rioja, San Juan, Mendoza, Neuquén, Río N
 - Seleccioná una provincia para centrar el mapa y mostrar solo sus datos.
 - También podés hacer **click directo en el mapa** sobre una provincia.
 
-### 2. Tipo de Glaciar
+### 2. Tipo de Geoforma
 
 Chips seleccionables para filtrar por tipo de geoforma:
-- **Glaciar** — Cuerpos de hielo permanente
-- **Periglacial** — Ambientes periglaciales (permafrost, glaciares de roca)
+- **Amb. Glacial** — Cuerpos de hielo permanente
+- **Amb. Periglacial** — Ambientes periglaciales (permafrost, glaciares de roca)
 
 Incluye un **slider de superficie mínima** (0–100 km²) para filtrar glaciares por tamaño.
 
-### 3. Tipo de Proyecto
+### 3. Minerales
 
-**2 chips** para filtrar por tipo de proyecto minero:
-- **Metalífero** — Proyectos de minería metalífera y litio (212 proyectos)
-- **No Metalífero** — Canteras, rocas de aplicación y minerales industriales (694 proyectos)
-
-### 4. Minerales
-
-**13 chips de minerales metalíferos**, cada uno con su color distintivo:
+**12 chips de minerales metalíferos**, cada uno con su color distintivo:
 
 | Mineral | Color del chip | Mineral | Color del chip |
 |---------|---------------|---------|---------------|
@@ -202,28 +253,28 @@ Incluye un **slider de superficie mínima** (0–100 km²) para filtrar glaciare
 | Oro | 🟡 Dorado | Hierro | 🟤 Marrón |
 | Plata | ⚪ Gris claro | Plomo | ⬜ Gris |
 | Litio | 🔵 Celeste | Carbón | ⚫ Negro |
-| Uranio | 🟢 Verde | | |
+| Uranio | 🟢 Verde | Manganeso | 🟣 Violeta |
+| Estaño | 🟧 Naranja oscuro | Cesio | 🟩 Verde azulado |
 
 Hacé click en un chip para **activar/desactivar** el filtro de ese mineral. Los chips activos tienen borde iluminado.
 
-### 5. Etapa del Proyecto
+### 4. Etapa del Proyecto
 
-**10 etapas del ciclo minero** como chips:
+**9 etapas del ciclo minero** como chips:
 
 | Etapa | Descripción |
 |-------|-------------|
 | **Producción** | La mina extrae mineral activamente |
 | **Construcción** | Se construye infraestructura minera |
 | **Factibilidad** | Evaluación de viabilidad económica |
-| **Prefactibilidad** | Estudios preliminaries de viabilidad |
+| **Prefactibilidad** | Estudios preliminares de viabilidad |
 | **Exploración avanzada** | Perforaciones para confirmar reservas |
 | **Evaluación económica** | Análisis económico preliminar |
 | **Prospección** | Etapa inicial de búsqueda |
 | **Exploración inicial** | Primeros trabajos de exploración |
 | **Cese de operaciones** | Operaciones suspendidas o en cierre |
-| **Proceso de Cierre** | Cierre formal y remediación |
 
-### 6. Radio de Proximidad
+### 5. Radio de Proximidad
 
 **4 botones** para configurar el radio de análisis de proximidad entre proyectos mineros y glaciares:
 
@@ -234,7 +285,7 @@ Hacé click en un chip para **activar/desactivar** el filtro de ese mineral. Los
 | **50 km** | Área de influencia media |
 | **100 km** | Contexto regional |
 
-### Botón "Restablecer Filtros"
+### 6. Botón "Restablecer Filtros"
 
 Un botón al final del sidebar permite **limpiar todos los filtros** de una vez y volver al estado inicial del dashboard.
 
@@ -248,7 +299,7 @@ El panel derecho contiene **4 pestañas** con visualizaciones y tablas:
 
 | Elemento | Detalle |
 |----------|---------|
-| **6 tarjetas métricas** | Glaciares, Periglacial, Proyectos Mineros, Alertas, Superficie, Provincias |
+| **6 tarjetas métricas** | Amb. Glacial, Amb. Periglacial, Proy. Metalíferos, En Proximidad, Superficie km², Provincias |
 | **Gráfico: Geoformas por Provincia** | Barras horizontales — cantidad de glaciares por provincia |
 | **Gráfico: Superficie Glaciar (km²)** | Barras horizontales — superficie total de hielo por provincia |
 
@@ -272,8 +323,8 @@ El panel derecho contiene **4 pestañas** con visualizaciones y tablas:
 
 | Elemento | Detalle |
 |----------|---------|
-| **KPIs nacionales ESG** | 6 tarjetas: Regalías (USD 210M), Empleo (27.500), Mujeres (11%), TSM (28), Certificada (1), GRI (8) |
-| **Tabla ESG por proyecto** | Columnas: Proyecto, Regalías, Empleo, Mujeres, TSM |
+| **KPIs nacionales ESG** | 6 tarjetas: Pagos fiscales (USD 637M), Regalías (USD 210M), Empleo (27.500), Mujeres (11%), TSM (28), Inversiones anunciadas (USD 23.1B) |
+| **Tabla ESG por proyecto (18 operaciones)** | 9 columnas: Proyecto, Impuestos 2023, Regalías 2023, Agua (m³), Energía (MWh), GEI (tCO₂e), Empleo, Mujeres, TSM |
 | **Directorio CAPMIN** | Buscador + filtro por rubro · 180+ proveedores mineros |
 
 #### Directorio CAPMIN
@@ -281,31 +332,43 @@ El panel derecho contiene **4 pestañas** con visualizaciones y tablas:
 El directorio de la **Cámara Argentina de Proveedores Mineros** incluye:
 - **Buscador de texto** para encontrar empresas específicas
 - **Filtro por rubro** (Explosivos, Laboratorio, Tecnología, Ambiental, etc.)
-- Tarjetas con: nombre de la empresa, productos/servicios, provincias donde operan
+- Tarjetas con: nombre, productos/servicios, tag PyME/Gran empresa, Exportadora, provincias donde operan
 
 ---
 
 ## Análisis de proximidad
 
-El motor de análisis espacial utiliza la **fórmula de Haversine** para calcular distancias geodésicas entre cada proyecto minero y todos los glaciares del inventario. Los resultados se clasifican en 4 categorías de proximidad:
+### Motor de análisis espacial
 
-| Distancia al glaciar más cercano | Categoría | Color |
-|----------------------------------|-------|-------|
-| Menos de 10 km | 🔵 **Inmediata** | Azul oscuro |
-| Entre 11 y 25 km | 🔵 **Cercana** | Azul |
-| Entre 26 y 50 km | 🔵 **Media** | Azul claro |
-| Más de 50 km | 🔵 **Lejana** | Azul pálido |
+El sistema utiliza un **índice espacial basado en grillas** (`analysis.js`) para evitar cálculos brute-force O(n×m). La optimización incluye:
+
+| Técnica | Detalle |
+|---------|---------|
+| **Grid-based spatial index** | Celdas de 0.5° (~55 km) con glaciares pre-indexados |
+| **Memoización** | Caché de resultados por combinación de parámetros |
+| **Fórmula de Haversine** | Cálculo geodésico preciso de distancias |
+| **Pre-cómputo bidireccional** | Cada glaciar sabe su proyecto más cercano y viceversa |
+
+### Categorías de proximidad
+
+| Distancia al glaciar más cercano | Categoría |
+|----------------------------------|-----------|
+| Menos de 10 km | 🔵 **Inmediata** |
+| Entre 11 y 25 km | 🔵 **Cercana** |
+| Entre 26 y 50 km | 🔵 **Media** |
+| Más de 50 km | 🔵 **Lejana** |
 
 > [!NOTE]
 > Las categorías son indicadores de distancia lineal. No implican evaluación de riesgo ambiental.
 
 ### ¿Cómo funciona?
 
-1. Para cada proyecto minero, el sistema calcula la distancia a **todos** los glaciares
-2. Identifica el **glaciar más cercano** y la distancia en kilómetros
-3. Cuenta cuántos glaciares caen **dentro del radio** configurado
-4. Asigna una **categoría de proximidad** basada en la distancia mínima
-5. Los resultados alimentan los indicadores del header, los gráficos y el chatbot
+1. Se construye un **índice espacial de grilla** con todos los glaciares al iniciar
+2. Para cada proyecto minero, se consultan solo las **celdas vecinas** (no todos los glaciares)
+3. Se identifica el **glaciar más cercano** con distancia exacta en km
+4. Se cuentan los glaciares **dentro del radio** configurado
+5. Se asigna una **categoría de proximidad** basada en la distancia mínima
+6. Los resultados alimentan los indicadores del header, los gráficos y ColossusAI
 
 ### ¿Cómo ajustar el radio?
 
@@ -327,12 +390,16 @@ ColossusAI es un chatbot de inteligencia artificial integrado en el dashboard, u
 | Función | Detalle |
 |---------|---------|
 | **Datos en tiempo real** | Responde con las cifras actuales del dashboard |
-| **Análisis cruzado** | Cruza datos de glaciares, minería, litio, ESG y CAPMIN |
+| **6 bases de datos cruzadas** | Cruza glaciares, minería, litio, ESG, CAPMIN y cuencas hídricas |
+| **Proximidad pre-calculada** | Usa las distancias Haversine del motor espacial (no adivina) |
 | **Memoria conversacional** | Recuerda los últimos **20 turnos** de la conversación |
-| **Respuestas enriquecidas** | Markdown con tablas, listas, negrita y código |
+| **Respuestas enriquecidas** | Markdown con tablas, listas, negrita, código y gráficos inline |
+| **Gráficos inline** | Genera gráficos Chart.js (bar, pie, doughnut) dentro del chat |
+| **XSS-safe Markdown** | Renderizado seguro con escape de HTML |
 | **Retry automático** | Reintenta hasta 3 veces ante fallas de conexión |
 | **Exportar conversación** | Botón 📥 para descargar el historial |
 | **Limpiar historial** | Botón 🗑️ para reiniciar la conversación |
+| **Marco legal integrado** | Conoce la Ley 26.639, Ley 24.585 y Resolución 142/2024 |
 
 ### Preguntas sugeridas
 
@@ -345,13 +412,24 @@ Al abrir el chatbot, aparecen **8 sugerencias** clickeables:
 | Superficie | 📊 *¿Qué provincia tiene más superficie glaciar?* |
 | ESG | 💰 *¿Cuántas regalías paga Veladero a San Juan?* |
 | Cuencas | 💧 *¿Qué glaciares alimentan el Río Mendoza?* |
-| Riesgo | ⚠️ *¿Dónde hay mayor conflicto minería-glaciares?* |
+| Conflicto | ⚠️ *¿Dónde hay mayor conflicto minería-glaciares?* |
 | Proyecciones | 🔋 *¿Cuánto litio va a producir Argentina en 2030?* |
 | Proveedores | 🏭 *¿Qué proveedores locales hay en Jujuy?* |
 
 ### Motor de IA
 
-ColossusAI está potenciado por **Google Gemini 2.5 Flash** a través de una API serverless en Vercel. El prompt del sistema incluye todas las bases de datos del dashboard como contexto, permitiendo respuestas precisas basadas en datos reales.
+ColossusAI está potenciado por **Google Gemini 2.5 Flash** a través de una API serverless en Vercel (`api/chat.js`). El prompt del sistema incluye las 6 bases de datos del dashboard como contexto completo, con más de 10 secciones de datos:
+
+1. Base de glaciares completa (ING)
+2. Proyectos mineros completos (SIACAM)
+3. Módulo Litio especializado
+4. ESG — Indicadores de sostenibilidad con datos fiscales y ambientales
+5. Cadena de suministros CAPMIN
+6. Análisis de proximidad espacial pre-calculado
+7. Cuencas hidrográficas
+8. Marco legal argentino
+9. Métricas derivadas pre-calculadas
+10. Ranking provincial por superficie glaciar
 
 ---
 
@@ -425,21 +503,39 @@ Datos específicos del litio que van más allá del SIACAM general:
 
 **Argentina en el mundo:**
 - 2.° lugar en **reservas globales** (20 Mt LCE = 22% mundial)
-- Proyección: **120 kt LCE en 2025 → 700 kt en 2035**
+- Proyección: **120 kt LCE en 2025 → 500 kt en 2030 → 700 kt en 2035**
 - Triángulo del Litio (Argentina, Chile, Bolivia): **56% de reservas mundiales**
 
 ---
 
-### 📊 ESG — Indicadores de Sostenibilidad (EITI / TSM / SIPA)
+### 📊 ESG — Indicadores de Sostenibilidad (SIACAM 2023 / EITI / TSM / SIPA)
+
+**KPIs nacionales:**
 
 | Indicador | Dato |
 |-----------|------|
+| Pagos fiscales (18 empresas, 2023) | ~USD 637 millones/año |
 | Regalías provinciales (sector minero) | ~USD 210 millones/año |
+| Inversiones anunciadas (dic-2019 – actual) | USD 23.100 millones |
 | Empleo directo formal (SIPA) | ~27.500 trabajadores |
 | Participación de mujeres | ~11% del sector |
-| Proyectos con reporte GRI | 8 |
 | Proyectos adhiriendo al programa TSM | 28 |
-| Minas con certificación TSM | 1 (Veladero, Barrick — mayo 2023) |
+
+**Tabla por proyecto (18 operaciones principales):**
+
+Cada fila incluye 9 indicadores:
+
+| Columna | Fuente |
+|---------|--------|
+| Proyecto (nombre, provincia, mineral) | SIACAM |
+| Impuestos 2023 (USD M) | SIACAM |
+| Regalías 2023 (USD M) | SIACAM / EITI |
+| Consumo de agua (m³) | SIACAM |
+| Consumo de energía (MWh) | SIACAM |
+| Emisiones GEI (tCO₂e) | SIACAM |
+| Empleo directo | SIACAM / SIPA |
+| Porcentaje de mujeres | SIACAM |
+| Status TSM | CAEM |
 
 **TSM (Towards Sustainable Mining):** Estándar de la Mining Association of Canada, adoptado por la CAEM en 2016. Argentina fue el **primer país de Latinoamérica** en implementarlo. Evalúa: relaves, agua, biodiversidad, clima, comunidades y seguridad.
 
@@ -476,6 +572,36 @@ El botón de **ColossusAI (🧠)** permanece accesible en todas las vistas.
 
 ---
 
+## Seguridad
+
+La aplicación implementa múltiples capas de seguridad:
+
+| Header / Política | Valor |
+|--------------------|-------|
+| **Content-Security-Policy** | Whitelist estricta de dominios para scripts, estilos, imágenes y conexiones |
+| **X-Frame-Options** | `DENY` — ningún sitio puede embeber el dashboard en un iframe |
+| **X-Content-Type-Options** | `nosniff` — previene MIME type sniffing |
+| **Referrer-Policy** | `strict-origin-when-cross-origin` |
+| **Permissions-Policy** | Cámara, micrófono y geolocalización deshabilitados |
+| **CORS en la API** | Solo acepta peticiones de dominios autorizados |
+| **XSS en el chat** | Escape de HTML en todas las entradas del usuario (chat.js v3.0) |
+
+---
+
+## Despliegue y hosting
+
+| Aspecto | Detalle |
+|---------|---------|
+| **Plataforma** | Vercel |
+| **Tipo** | Static site + 1 Serverless Function |
+| **Dominio** | dashboardmineria.vercel.app |
+| **CORS** | Dominios permitidos: leydeglaciares.tech |
+| **Caché HTML** | `max-age=0, must-revalidate` (siempre fresco) |
+| **Analytics** | Vercel Web Analytics integrado |
+| **Environment vars** | `GEMINI_API_KEY` (server-side, no expuesta al cliente) |
+
+---
+
 ## Fuentes de datos oficiales
 
 | Dato | Fuente |
@@ -484,7 +610,8 @@ El botón de **ColossusAI (🧠)** permanece accesible en todas las vistas.
 | Actualización NOA (2024) | Resolución 142/2024 — Secretaría de Minería |
 | Proyectos mineros | SIACAM — datos.gob.ar |
 | Litio (capacidad, reservas) | USGS / Benchmark Mineral Intelligence |
-| ESG / Regalías | EITI Argentina — 4to Informe (FY 2022/23) |
+| ESG / Pagos fiscales | SIACAM 2023 / EITI Argentina |
+| Regalías | EITI Argentina — 4to Informe (FY 2022/23) |
 | Empleo | SIPA — INDEC |
 | TSM | CAEM / Mining Association of Canada |
 | Proveedores | CAPMIN — capmin.com.ar |
@@ -514,6 +641,9 @@ Chrome 90+, Firefox 88+, Safari 15+, Edge 90+. Recomendamos Chrome para la mejor
 
 **¿El estado de los proyectos mineros es el actual?**
 Corresponde a la última versión disponible en datos.gob.ar (SIACAM). El estado de algunos proyectos puede haber cambiado desde la publicación original.
+
+**¿ColossusAI puede generar gráficos?**
+Sí. Cuando la respuesta incluye datos comparativos (3+ items numéricos), el chatbot genera automáticamente gráficos interactivos (barras, torta, donut) dentro de la conversación.
 
 ---
 
