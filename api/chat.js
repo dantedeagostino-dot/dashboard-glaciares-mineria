@@ -84,7 +84,8 @@ ${context?.proximidadReal || 'Sin datos de proximidad'}
 ═══════════════════════════════════════════
 
 ═══════════════════════════════════════════
-CUENCAS HIDROGRÁFICAS (cuenca|superficie|geoformas|provincias|glaciares):
+CUENCAS HIDROGRÁFICAS (40 cuencas, 81 subcuencas en 12 provincias):
+Datos por subcuenca: cuenca|subcuenca|provincia|geoformas|superficie_km²|glaciares|ambientes_periglaciares|altitud
 ${context?.cuencasHidrograficas || 'No disponible'}
 ═══════════════════════════════════════════
 

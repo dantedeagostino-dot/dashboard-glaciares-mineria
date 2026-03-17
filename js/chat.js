@@ -727,9 +727,44 @@
                 .join('\n');
         }
 
-        // 12. Cuencas hidrográficas summary (already inline in optimized glaciares)
+        // 12. Cuencas hidrográficas — use pre-built CUENCAS_RESUMEN for subcuenca detail
         let cuencasResumen = '';
-        if (typeof GLACIARES_DATA !== 'undefined') {
+        if (typeof CUENCAS_RESUMEN !== 'undefined') {
+            // Use the pre-built summary with subcuenca-level detail
+            if (activeProvince !== 'Todas') {
+                // Province selected: full detail for that province
+                const provCuencas = CUENCAS_RESUMEN.filter(c => c.provincia === activeProvince);
+                cuencasResumen = `[CUENCAS EN ${activeProvince} (${provCuencas.length} subcuencas)]:\n` +
+                    provCuencas
+                        .sort((a, b) => b.superficie_total_km2 - a.superficie_total_km2)
+                        .map(c => `${c.cuenca}|${c.subcuenca}|${c.total_geoformas} geoformas|${c.superficie_total_km2}km²|${c.glaciares} glaciares|${c.ambientes_periglaciares} perigl.|alt:${c.altitud_min}-${c.altitud_max}m`)
+                        .join('\n') +
+                    '\n\n[RESUMEN NACIONAL (otras provincias)]:\n' +
+                    Object.entries(
+                        CUENCAS_RESUMEN.filter(c => c.provincia !== activeProvince)
+                            .reduce((acc, c) => {
+                                if (!acc[c.provincia]) acc[c.provincia] = { cuencas: 0, geoformas: 0, sup: 0 };
+                                acc[c.provincia].cuencas++;
+                                acc[c.provincia].geoformas += c.total_geoformas;
+                                acc[c.provincia].sup += c.superficie_total_km2;
+                                return acc;
+                            }, {})
+                    )
+                    .sort((a, b) => b[1].sup - a[1].sup)
+                    .map(([prov, d]) => `${prov}: ${d.cuencas} subcuencas | ${d.geoformas} geoformas | ${d.sup.toFixed(1)} km²`)
+                    .join('\n');
+            } else {
+                // No province: top 30 subcuencas by area + per-province totals
+                const top30 = [...CUENCAS_RESUMEN]
+                    .sort((a, b) => b.superficie_total_km2 - a.superficie_total_km2)
+                    .slice(0, 30)
+                    .map(c => `${c.cuenca}|${c.subcuenca}|${c.provincia}|${c.total_geoformas} geoformas|${c.superficie_total_km2}km²|${c.glaciares} glaciares|${c.ambientes_periglaciares} perigl.`)
+                    .join('\n');
+                cuencasResumen = `[TOP 30 SUBCUENCAS POR SUPERFICIE]:\n${top30}\n\n` +
+                    `[TOTAL: ${CUENCAS_RESUMEN.length} subcuencas en 12 provincias y 40 cuencas]`;
+            }
+        } else if (typeof GLACIARES_DATA !== 'undefined') {
+            // Fallback: compute from raw data
             const cuencaMap = {};
             GLACIARES_DATA.forEach(g => {
                 if (!cuencaMap[g.cuenca]) cuencaMap[g.cuenca] = { count: 0, superficie: 0, provincias: new Set() };
@@ -739,7 +774,7 @@
             });
             cuencasResumen = Object.entries(cuencaMap)
                 .sort((a, b) => b[1].superficie - a[1].superficie)
-                .slice(0, 20) // Top 20 cuencas instead of all
+                .slice(0, 20)
                 .map(([cuenca, d]) => `${cuenca}: ${d.superficie.toFixed(1)} km² | ${d.count} geoformas | ${[...d.provincias].join(', ')}`)
                 .join('\n');
         }
