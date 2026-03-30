@@ -11,6 +11,7 @@
     let glaciarLayer, periglacialLayer, mineriaLayer, alertsLayer, provinciaLayer;
     let segeMarLayer; // SIGAM WMS — geological units (SEGEMAR)
     let glaciarPolygonLayer = null; // GeoJSON polygon outlines (loaded on demand)
+    let cuencasLayer = null; // GeoJSON Cuencas Hidrograficas COHIFE
     let currentProximityData = [];
     let currentMineralAnalysis = {};
 
@@ -180,6 +181,22 @@
                 }
             });
         }
+        
+        // Cuencas Hidrograficas (COHIFE / IGN) toggle
+        const cuencasToggle = document.getElementById('layerCuencas');
+        if (cuencasToggle) {
+            cuencasToggle.addEventListener('change', e => {
+                if (e.target.checked) {
+                    if (cuencasLayer) {
+                        map.addLayer(cuencasLayer);
+                    } else {
+                        loadCuencasLayer();
+                    }
+                } else if (cuencasLayer) {
+                    map.removeLayer(cuencasLayer);
+                }
+            });
+        }
     }
 
     // ── Glacier Polygon GeoJSON Layer ──────────────
@@ -236,6 +253,64 @@
             })
             .catch(err => {
                 console.error('Error loading glacier polygons:', err);
+                if (countEl) countEl.textContent = 'error al cargar';
+            });
+    }
+
+    // ── Cuencas Hídricas COHIFE Layer ──────────────
+    function loadCuencasLayer() {
+        const countEl = document.getElementById('countCuencas');
+        if (countEl) countEl.textContent = 'descargando...';
+
+        fetch(`data/cuencas.geojson?v=${Date.now()}`)
+            .then(r => r.json())
+            .then(geojson => {
+                cuencasLayer = L.geoJSON(geojson, {
+                    style: function (feature) {
+                        return {
+                            color: '#00d2ff', // Neon border
+                            weight: 2,
+                            opacity: 0.8,
+                            dashArray: '5, 5', // Dashed line to look like a border
+                            fillColor: '#00d2ff',
+                            fillOpacity: 0.05, // Very transparent
+                            className: 'cuenca-polygon'
+                        };
+                    },
+                    onEachFeature: function (feature, layer) {
+                        // Bind popup with general properties
+                        const p = feature.properties;
+                        let html = '<div class="popup-content">';
+                        html += '<h4 class="glacier-title" style="color:#00d2ff; text-shadow:0 0 8px rgba(0,210,255,0.8);"><i class="fa-solid fa-water" style="margin-right:6px"></i>Cuenca Hídrica</h4>';
+                        
+                        // Dynamically iterate over properties as we don't know the exact schema of COHIFE
+                        for (let key in p) {
+                            if (p.hasOwnProperty(key) && p[key] && key.toLowerCase() !== 'shape_leng' && key.toLowerCase() !== 'shape_area') {
+                                html += `<div class="popup-row"><span class="label">${key}</span><span class="value">${p[key]}</span></div>`;
+                            }
+                        }
+                        html += '</div>';
+                        
+                        layer.bindPopup(html, { maxWidth: 350 });
+                        
+                        // Hover interactions
+                        layer.on('mouseover', function (e) {
+                            const layer = e.target;
+                            layer.setStyle({
+                                fillOpacity: 0.2, // Highlight fill
+                                weight: 3
+                            });
+                        });
+                        layer.on('mouseout', function (e) {
+                            cuencasLayer.resetStyle(e.target);
+                        });
+                    }
+                }).addTo(map);
+
+                if (countEl) countEl.textContent = `${geojson.features.length.toLocaleString()} cuencas`;
+            })
+            .catch(err => {
+                console.error('Error loading cuencas polygons:', err);
                 if (countEl) countEl.textContent = 'error al cargar';
             });
     }
